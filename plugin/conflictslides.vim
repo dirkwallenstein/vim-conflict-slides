@@ -205,6 +205,8 @@ fun! g:ConflictSlides.releaseLock() dict
     let self.has_base_section = 0
     let self.origin_comment_ours = ''
     let self.origin_comment_theirs = ''
+    let self.origin_comment_base = ''
+    let self.origin_comment_sep = ''
     let self.locked = 0
     let self.lock_time = 0
 
@@ -238,6 +240,8 @@ fun! g:ConflictSlides.lockToCurrentConflict() dict
 
     let self.origin_comment_ours = l:conflict_info.marker_comment_start
     let self.origin_comment_theirs = l:conflict_info.marker_comment_end
+    let self.origin_comment_base = l:conflict_info.marker_comment_base
+    let self.origin_comment_sep = l:conflict_info.marker_comment_separator
 
     " ---
 
@@ -327,6 +331,16 @@ fun! g:ConflictSlides.enforceIsInActiveConflictRange() dict
     endif
 endfun
 
+fun! g:ConflictSlides.getMarkerLine(marker, comment) dict
+    " Return a:marker, appended by space and a:comment if a:comment is
+    " not empty.
+    if empty(a:comment)
+        return a:marker
+    else
+        return a:marker . ' ' . a:comment
+    endif
+endfun
+
 fun! g:ConflictSlides.getNewContent_Complex(want_reverse, force_no_base) dict
     " A delegate of getNewContent that covers the cases with conflict
     " markers.
@@ -341,21 +355,20 @@ fun! g:ConflictSlides.getNewContent_Complex(want_reverse, force_no_base) dict
                     \ = [l:bottom_origin, l:top_origin]
     endif
 
-    let l:new_start_marker = '<<<<<<<'
-    if !empty(l:top_origin)
-        let l:new_start_marker .= ' ' . l:top_origin
-    endif
-
-    let l:new_end_marker = '>>>>>>>'
-    if !empty(l:bottom_origin)
-        let l:new_end_marker .= ' ' . l:bottom_origin
-    endif
+    let l:new_start_marker = self.getMarkerLine(
+                \ g:CONFLICT_MARKER_START, l:top_origin)
+    let l:new_end_marker = self.getMarkerLine(
+                \ g:CONFLICT_MARKER_END, l:bottom_origin)
+    let l:new_base_marker = self.getMarkerLine(
+                \ g:CONFLICT_MARKER_BASE, self.origin_comment_base)
+    let l:new_sep_marker = self.getMarkerLine(
+                \ g:CONFLICT_MARKER_SEPARATOR, self.origin_comment_sep)
 
     let l:all_new_content = [l:new_start_marker] + l:top_content
     if self.has_base_section && !a:force_no_base
-        call extend(l:all_new_content, ['|||||||'] + self.base_content)
+        call extend(l:all_new_content, [l:new_base_marker] + self.base_content)
     endif
-    call extend(l:all_new_content, ['======='] + l:bottom_content
+    call extend(l:all_new_content, [l:new_sep_marker] + l:bottom_content
                 \ + [l:new_end_marker])
     return l:all_new_content
 endfun
