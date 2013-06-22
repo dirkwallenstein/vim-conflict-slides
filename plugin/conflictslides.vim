@@ -12,13 +12,24 @@
 " along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+if (exists("g:loaded_conflictslides") && g:loaded_conflictslides)
+    finish
+endif
+let g:loaded_conflictslides = 1
+
+
 let g:CONFLICT_MARKER_START = '<<<<<<<'
 let g:CONFLICT_MARKER_END = '>>>>>>>'
 let g:CONFLICT_MARKER_BASE = '|||||||'
 let g:CONFLICT_MARKER_SEPARATOR = '======='
 
 
-fun! GetCurrentConflictRange()
+fun! s:EchoImportant(message)
+    " Try to echo important messages as described in the Vim docs.
+    redraw | echohl WarningMsg | echomsg a:message | echohl None
+endf
+
+fun! s:GetCurrentConflictRange()
     " Find the range of the current conflict and
     " return [l:start_this, l:end_this]
     " return an empty list if not inside a conflict range
@@ -67,11 +78,11 @@ fun! GetCurrentConflictRange()
 
     call setpos('.', l:save_cursor)
     let l:found_range = [l:start_this, l:end_this]
-    call EnforceValidContentRange(l:found_range, 0)
+    call s:EnforceValidContentRange(l:found_range, 0)
     return l:found_range
 endf
 
-fun! EnforceValidContentRange(range, allow_empty)
+fun! s:EnforceValidContentRange(range, allow_empty)
     " Either the range argument is empty or a list of two items where none is
     " zero and where the second item is larger or equal to the first.
     if a:allow_empty && empty(a:range)
@@ -91,7 +102,7 @@ endfun
 
 " --------------
 
-fun! GetCurrentConflictInfo()
+fun! CS_GetCurrentConflictInfo()
     " Return a dictionary with the following keys grouped in sections.
     "
     " conflict marker line numbers:
@@ -122,7 +133,7 @@ fun! GetCurrentConflictInfo()
     let l:save_cursor = getpos(".")
     let l:conflict_info = {}
 
-    let l:range = GetCurrentConflictRange()
+    let l:range = s:GetCurrentConflictRange()
     if empty(l:range)
         throw "GetConflictInfo: Not inside conflict markers"
     endif
@@ -130,16 +141,16 @@ fun! GetCurrentConflictInfo()
                 \ l:conflict_info.linenumber_start,
                 \ l:conflict_info.linenumber_end] = l:range
 
-    call GetConflictInfo_AddAdditionalLineNumbers(l:conflict_info)
-    call GetConflictInfo_AddRanges(l:conflict_info)
-    call GetConflictInfo_AddContent(l:conflict_info)
-    call GetConflictInfo_AddConflictMarkerComments(l:conflict_info)
+    call s:GetConflictInfo_AddAdditionalLineNumbers(l:conflict_info)
+    call s:GetConflictInfo_AddRanges(l:conflict_info)
+    call s:GetConflictInfo_AddContent(l:conflict_info)
+    call s:GetConflictInfo_AddConflictMarkerComments(l:conflict_info)
 
     call setpos('.', l:save_cursor)
     return l:conflict_info
 endfun
 
-fun! GetConflictInfo_FixEmptyRange(range)
+fun! s:GetConflictInfo_FixEmptyRange(range)
     " If the range of the format [start, end] is invalid, return an empty
     " list.  Currently, just allow the special case that can result from
     " obtaining conflict ranges where end is one less than start if there is no
@@ -155,7 +166,7 @@ fun! GetConflictInfo_FixEmptyRange(range)
     endif
 endfun
 
-fun! GetConflictInfo_AddAdditionalLineNumbers(info)
+fun! s:GetConflictInfo_AddAdditionalLineNumbers(info)
     " Add the line numbers of the separator and the base.  The latter will be
     " zero if there is no base content included in the conflict.
     call cursor(a:info.linenumber_start, 0)
@@ -169,28 +180,28 @@ fun! GetConflictInfo_AddAdditionalLineNumbers(info)
     endif
 endfun
 
-fun! GetConflictInfo_AddRanges(info)
+fun! s:GetConflictInfo_AddRanges(info)
     " Add the ranges for the three sections.  linenumber_base determines if
     " there is a base section present.
     if a:info.linenumber_base
-        let a:info.range_base = GetConflictInfo_FixEmptyRange(
+        let a:info.range_base = s:GetConflictInfo_FixEmptyRange(
                     \ [a:info.linenumber_base+1, a:info.linenumber_separator-1])
-        let a:info.range_ours = GetConflictInfo_FixEmptyRange(
+        let a:info.range_ours = s:GetConflictInfo_FixEmptyRange(
                     \ [a:info.linenumber_start+1, a:info.linenumber_base-1])
     else
         let a:info.range_base = []
-        let a:info.range_ours = GetConflictInfo_FixEmptyRange(
+        let a:info.range_ours = s:GetConflictInfo_FixEmptyRange(
                     \ [a:info.linenumber_start+1, a:info.linenumber_separator-1])
     endif
-    let a:info.range_theirs = GetConflictInfo_FixEmptyRange(
+    let a:info.range_theirs = s:GetConflictInfo_FixEmptyRange(
                 \ [a:info.linenumber_separator+1, a:info.linenumber_end-1])
 
-    call EnforceValidContentRange(a:info.range_base, 1)
-    call EnforceValidContentRange(a:info.range_ours, 1)
-    call EnforceValidContentRange(a:info.range_theirs, 1)
+    call s:EnforceValidContentRange(a:info.range_base, 1)
+    call s:EnforceValidContentRange(a:info.range_ours, 1)
+    call s:EnforceValidContentRange(a:info.range_theirs, 1)
 endfun
 
-fun! GetConflictInfo_AddContent(info)
+fun! s:GetConflictInfo_AddContent(info)
     " Add the content of the three ranges
     let a:info.content_base = empty(a:info.range_base) ? []
                 \ : getline(a:info.range_base[0], a:info.range_base[1])
@@ -200,7 +211,7 @@ fun! GetConflictInfo_AddContent(info)
                 \ : getline(a:info.range_theirs[0], a:info.range_theirs[1])
 endfun
 
-fun! GetConflictInfo_GetMarkerComment(linenumber, marker)
+fun! s:GetConflictInfo_GetMarkerComment(linenumber, marker)
     " Extract the comment after a:marker in a:linenumber
     let l:matches = matchlist(getline(a:linenumber),
                 \ '^' . a:marker . ' \?\(.*\)$')
@@ -212,47 +223,45 @@ fun! GetConflictInfo_GetMarkerComment(linenumber, marker)
     return l:matches[1]
 endfun
 
-fun! GetConflictInfo_AddConflictMarkerComments(info)
+fun! s:GetConflictInfo_AddConflictMarkerComments(info)
     " Add the comments after the conflict markers (all four)
-    let a:info.marker_comment_start = GetConflictInfo_GetMarkerComment(
+    let a:info.marker_comment_start = s:GetConflictInfo_GetMarkerComment(
                 \ a:info.linenumber_start, g:CONFLICT_MARKER_START)
-    let a:info.marker_comment_end = GetConflictInfo_GetMarkerComment(
+    let a:info.marker_comment_end = s:GetConflictInfo_GetMarkerComment(
                 \ a:info.linenumber_end, g:CONFLICT_MARKER_END)
-    let a:info.marker_comment_base = GetConflictInfo_GetMarkerComment(
+    let a:info.marker_comment_base = s:GetConflictInfo_GetMarkerComment(
                 \ a:info.linenumber_base, g:CONFLICT_MARKER_BASE)
-    let a:info.marker_comment_separator = GetConflictInfo_GetMarkerComment(
+    let a:info.marker_comment_separator = s:GetConflictInfo_GetMarkerComment(
                 \ a:info.linenumber_separator, g:CONFLICT_MARKER_SEPARATOR)
 endfun
 
 
 " =====================================
 
-if ! exists( "g:ConflictSlides" )
-    let g:ConflictSlides = {}
+let g:ConflictSlides = {}
 
-    fun! g:ConflictSlides.releaseLock() dict
-        let self.locked_file = ''
-        let self.start_line = 0
-        let self.end_line = 0
-        let self.base_content = ''
-        let self.our_content = ''
-        let self.their_content = ''
-        let self.has_base_section = 0
-        let self.origin_comment_ours = ''
-        let self.origin_comment_theirs = ''
-        let self.locked = 0
-        let self.lock_time = 0
+fun! g:ConflictSlides.releaseLock() dict
+    let self.locked_file = ''
+    let self.start_line = 0
+    let self.end_line = 0
+    let self.base_content = ''
+    let self.our_content = ''
+    let self.their_content = ''
+    let self.has_base_section = 0
+    let self.origin_comment_ours = ''
+    let self.origin_comment_theirs = ''
+    let self.locked = 0
+    let self.lock_time = 0
 
-        set modifiable
+    set modifiable
 
-        if exists("*g:conflict_slides_post_release_callback")
-            call g:conflict_slides_post_release_callback()
-        endif
-    endfun
+    if exists("*g:conflict_slides_post_release_callback")
+        call g:conflict_slides_post_release_callback()
+    endif
+endfun
 
-    " initialize
-    call g:ConflictSlides.releaseLock()
-endif
+" initialize
+call g:ConflictSlides.releaseLock()
 
 fun! g:ConflictSlides.lockToCurrentConflict() dict
     if self.locked
@@ -261,7 +270,7 @@ fun! g:ConflictSlides.lockToCurrentConflict() dict
                     \ . ") line(" . self.start_line
                     \ . ") at time(" . strftime("%H:%M", self.lock_time) . ")."
     endif
-    let l:conflict_info = GetCurrentConflictInfo()
+    let l:conflict_info = CS_GetCurrentConflictInfo()
 
     let self.start_line = l:conflict_info.linenumber_start
     let self.end_line = l:conflict_info.linenumber_end
@@ -474,16 +483,11 @@ endfun
 
 " ---
 
-fun! CS_EchoImportant(message)
-    " Try to echo important messages as described in the Vim docs.
-    redraw | echohl WarningMsg | echomsg a:message | echohl None
-endf
-
 fun! CS_MoveCursorToCurrentConflict()
     try
         call g:ConflictSlides.positionCursorAtDefaultLocation()
     catch /CannotPositionCursor/
-        call CS_EchoImportant(v:exception)
+        call s:EchoImportant(v:exception)
     endtry
 endfun
 
