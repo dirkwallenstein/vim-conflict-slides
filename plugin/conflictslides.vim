@@ -29,6 +29,8 @@ fun! s:EchoImportant(message)
     redraw | echohl WarningMsg | echomsg a:message | echohl None
 endf
 
+" === Conflict Info ===
+
 fun! s:GetCurrentConflictRange()
     " Find the range of the current conflict and
     " return [l:start_this, l:end_this]
@@ -98,56 +100,6 @@ fun! s:EnforceValidContentRange(range, allow_empty)
     else
         return 1
     endif
-endfun
-
-" --------------
-
-fun! CS_GetCurrentConflictInfo()
-    " Return a dictionary with the following keys grouped in sections.
-    "
-    " conflict marker line numbers:
-    "   linenumber_start
-    "   linenumber_end
-    "   linenumber_base
-    "   linenumber_separator
-    "
-    " content ranges as lists of line numbers [start, end].  The list is empty
-    " if there is no content:
-    "   range_ours
-    "   range_theirs
-    "   range_base
-    "
-    " content lists of strings:
-    "   content_ours
-    "   content_theirs
-    "   content_base
-    "
-    " The trailings strings after comment markers (empty if not present)
-    "   marker_comment_start
-    "   marker_comment_end
-    "   marker_comment_base
-    "   marker_comment_separator
-    "
-    " linenumber_base determines if there is a base section present. (zero if not)
-    "
-    let l:save_cursor = getpos(".")
-    let l:conflict_info = {}
-
-    let l:range = s:GetCurrentConflictRange()
-    if empty(l:range)
-        throw "GetConflictInfo: Not inside conflict markers"
-    endif
-    let [
-                \ l:conflict_info.linenumber_start,
-                \ l:conflict_info.linenumber_end] = l:range
-
-    call s:GetConflictInfo_AddAdditionalLineNumbers(l:conflict_info)
-    call s:GetConflictInfo_AddRanges(l:conflict_info)
-    call s:GetConflictInfo_AddContent(l:conflict_info)
-    call s:GetConflictInfo_AddConflictMarkerComments(l:conflict_info)
-
-    call setpos('.', l:save_cursor)
-    return l:conflict_info
 endfun
 
 fun! s:GetConflictInfo_FixEmptyRange(range)
@@ -236,7 +188,7 @@ fun! s:GetConflictInfo_AddConflictMarkerComments(info)
 endfun
 
 
-" =====================================
+" === Conflict Slides ===
 
 let g:ConflictSlides = {}
 
@@ -481,7 +433,7 @@ fun! g:ConflictSlides.modifyConflictContent(content_type, want_append) dict
     set nomodifiable
 endfun
 
-" ---
+" === Exported Functions ===
 
 fun! CS_MoveCursorToCurrentConflict()
     try
@@ -493,4 +445,52 @@ endfun
 
 fun! CS_isInFileWithLockedConflict()
     return g:ConflictSlides.isInLockedFile()
+endfun
+
+fun! CS_GetCurrentConflictInfo()
+    " Return a dictionary with the following keys grouped in sections.
+    "
+    " conflict marker line numbers:
+    "   linenumber_start
+    "   linenumber_end
+    "   linenumber_base
+    "   linenumber_separator
+    "
+    " content ranges as lists of line numbers [start, end].  The list is empty
+    " if there is no content:
+    "   range_ours
+    "   range_theirs
+    "   range_base
+    "
+    " content lists of strings:
+    "   content_ours
+    "   content_theirs
+    "   content_base
+    "
+    " The trailings strings after comment markers (empty if not present)
+    "   marker_comment_start
+    "   marker_comment_end
+    "   marker_comment_base
+    "   marker_comment_separator
+    "
+    " linenumber_base determines if there is a base section present. (zero if not)
+    "
+    let l:save_cursor = getpos(".")
+    let l:conflict_info = {}
+
+    let l:range = s:GetCurrentConflictRange()
+    if empty(l:range)
+        throw "GetConflictInfo: Not inside conflict markers"
+    endif
+    let [
+                \ l:conflict_info.linenumber_start,
+                \ l:conflict_info.linenumber_end] = l:range
+
+    call s:GetConflictInfo_AddAdditionalLineNumbers(l:conflict_info)
+    call s:GetConflictInfo_AddRanges(l:conflict_info)
+    call s:GetConflictInfo_AddContent(l:conflict_info)
+    call s:GetConflictInfo_AddConflictMarkerComments(l:conflict_info)
+
+    call setpos('.', l:save_cursor)
+    return l:conflict_info
 endfun
