@@ -18,10 +18,10 @@ endif
 let g:loaded_conflictslides = 1
 
 
-let g:CONFLICT_MARKER_START = '<<<<<<<'
-let g:CONFLICT_MARKER_END = '>>>>>>>'
-let g:CONFLICT_MARKER_BASE = '|||||||'
-let g:CONFLICT_MARKER_SEPARATOR = '======='
+let s:CONFLICT_MARKER_START = '<<<<<<<'
+let s:CONFLICT_MARKER_END = '>>>>>>>'
+let s:CONFLICT_MARKER_BASE = '|||||||'
+let s:CONFLICT_MARKER_SEPARATOR = '======='
 
 
 fun! s:EchoImportant(message)
@@ -123,9 +123,9 @@ fun! s:GetConflictInfo_AddAdditionalLineNumbers(info)
     " zero if there is no base content included in the conflict.
     call cursor(a:info.linenumber_start, 0)
     let a:info.linenumber_base = search(
-                \ '^' . g:CONFLICT_MARKER_BASE . '\( .*\|$\)', 'nW')
+                \ '^' . s:CONFLICT_MARKER_BASE . '\( .*\|$\)', 'nW')
     let a:info.linenumber_separator = search(
-                \ '^' . g:CONFLICT_MARKER_SEPARATOR . '\( .*\|$\)', 'nW')
+                \ '^' . s:CONFLICT_MARKER_SEPARATOR . '\( .*\|$\)', 'nW')
     if a:info.linenumber_separator == 0
         throw "GetConflictInfo: No conflict separator found in range: "
                     \ . string([a:info.linenumber_start,
@@ -181,13 +181,13 @@ endfun
 fun! s:GetConflictInfo_AddConflictMarkerComments(info)
     " Add the comments after the conflict markers (all four)
     let a:info.marker_comment_start = s:GetConflictInfo_GetMarkerComment(
-                \ a:info.linenumber_start, g:CONFLICT_MARKER_START)
+                \ a:info.linenumber_start, s:CONFLICT_MARKER_START)
     let a:info.marker_comment_end = s:GetConflictInfo_GetMarkerComment(
-                \ a:info.linenumber_end, g:CONFLICT_MARKER_END)
+                \ a:info.linenumber_end, s:CONFLICT_MARKER_END)
     let a:info.marker_comment_base = s:GetConflictInfo_GetMarkerComment(
-                \ a:info.linenumber_base, g:CONFLICT_MARKER_BASE)
+                \ a:info.linenumber_base, s:CONFLICT_MARKER_BASE)
     let a:info.marker_comment_separator = s:GetConflictInfo_GetMarkerComment(
-                \ a:info.linenumber_separator, g:CONFLICT_MARKER_SEPARATOR)
+                \ a:info.linenumber_separator, s:CONFLICT_MARKER_SEPARATOR)
 endfun
 
 
@@ -356,13 +356,13 @@ fun! g:ConflictSlides.getNewContent_Complex(want_reverse, force_no_base) dict
     endif
 
     let l:new_start_marker = self.getMarkerLine(
-                \ g:CONFLICT_MARKER_START, l:top_origin)
+                \ s:CONFLICT_MARKER_START, l:top_origin)
     let l:new_end_marker = self.getMarkerLine(
-                \ g:CONFLICT_MARKER_END, l:bottom_origin)
+                \ s:CONFLICT_MARKER_END, l:bottom_origin)
     let l:new_base_marker = self.getMarkerLine(
-                \ g:CONFLICT_MARKER_BASE, self.origin_comment_base)
+                \ s:CONFLICT_MARKER_BASE, self.origin_comment_base)
     let l:new_sep_marker = self.getMarkerLine(
-                \ g:CONFLICT_MARKER_SEPARATOR, self.origin_comment_sep)
+                \ s:CONFLICT_MARKER_SEPARATOR, self.origin_comment_sep)
 
     let l:all_new_content = [l:new_start_marker] + l:top_content
     if self.has_base_section && !a:force_no_base
