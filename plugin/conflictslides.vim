@@ -128,7 +128,8 @@ fun! s:GetConflictInfo_AddAdditionalLineNumbers(info)
                 \ '^' . g:CONFLICT_MARKER_SEPARATOR . '\( .*\|$\)', 'nW')
     if a:info.linenumber_separator == 0
         throw "GetConflictInfo: No conflict separator found in range: "
-                    \ . string([a:info.linenumber_start, a:info.linenumber_end])
+                    \ . string([a:info.linenumber_start,
+                            \ a:info.linenumber_end])
     endif
 endfun
 
@@ -137,13 +138,15 @@ fun! s:GetConflictInfo_AddRanges(info)
     " there is a base section present.
     if a:info.linenumber_base
         let a:info.range_base = s:GetConflictInfo_FixEmptyRange(
-                    \ [a:info.linenumber_base+1, a:info.linenumber_separator-1])
+                    \ [a:info.linenumber_base+1,
+                            \ a:info.linenumber_separator-1])
         let a:info.range_ours = s:GetConflictInfo_FixEmptyRange(
                     \ [a:info.linenumber_start+1, a:info.linenumber_base-1])
     else
         let a:info.range_base = []
         let a:info.range_ours = s:GetConflictInfo_FixEmptyRange(
-                    \ [a:info.linenumber_start+1, a:info.linenumber_separator-1])
+                    \ [a:info.linenumber_start+1,
+                            \ a:info.linenumber_separator-1])
     endif
     let a:info.range_theirs = s:GetConflictInfo_FixEmptyRange(
                 \ [a:info.linenumber_separator+1, a:info.linenumber_end-1])
@@ -310,10 +313,12 @@ fun! g:ConflictSlides.enforceIsInActiveConflictRange() dict
     " Throw an exception if the cursor is not inside a locked conflict
     " range.
     if !self.locked
-        throw "NotInsideActiveConflict: g:ConflictSlides is not locked to a conflict."
+        throw "NotInsideActiveConflict: g:ConflictSlides is not "
+                    \ . "locked to a conflict."
     endif
     if !self.isInLockedFile()
-        throw "NotInsideActiveConflict: Not in the right file(" . self.locked_file . ")"
+        throw "NotInsideActiveConflict: Not in the right file("
+                    \ . self.locked_file . ")"
     endif
     if line('.') == self.getCursorDefaultLineNumber()
         return
@@ -330,8 +335,10 @@ fun! g:ConflictSlides.getNewContent_Complex(want_reverse, force_no_base) dict
     let l:bottom_content = self.their_content
     let l:bottom_origin = self.origin_comment_theirs
     if a:want_reverse
-        let [l:top_content, l:bottom_content] = [l:bottom_content, l:top_content]
-        let [l:top_origin, l:bottom_origin] = [l:bottom_origin, l:top_origin]
+        let [l:top_content, l:bottom_content]
+                    \ = [l:bottom_content, l:top_content]
+        let [l:top_origin, l:bottom_origin]
+                    \ = [l:bottom_origin, l:top_origin]
     endif
 
     let l:new_start_marker = '<<<<<<<'
@@ -348,7 +355,8 @@ fun! g:ConflictSlides.getNewContent_Complex(want_reverse, force_no_base) dict
     if self.has_base_section && !a:force_no_base
         call extend(l:all_new_content, ['|||||||'] + self.base_content)
     endif
-    call extend(l:all_new_content, ['======='] + l:bottom_content + [l:new_end_marker])
+    call extend(l:all_new_content, ['======='] + l:bottom_content
+                \ + [l:new_end_marker])
     return l:all_new_content
 endfun
 
@@ -473,7 +481,8 @@ fun! CS_GetCurrentConflictInfo()
     "   marker_comment_base
     "   marker_comment_separator
     "
-    " linenumber_base determines if there is a base section present. (zero if not)
+    " linenumber_base determines if there is a base section present.
+    " (zero if not)
     "
     let l:save_cursor = getpos(".")
     let l:conflict_info = {}
