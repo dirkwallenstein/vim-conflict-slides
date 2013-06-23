@@ -522,17 +522,27 @@ fun! CS_MoveCursorToCurrentConflict()
     endtry
 endfun
 
-fun! CS_MoveCursorToNextConflict(want_backward)
-    " Move to the start of the next conflict forward or backward.  This works
-    " independently of any conflict-slide locks.  Just move to the next
-    " conflict marker.
+fun! CS_MoveCursorToNextConflict(...)
+    " Move to the start of the next conflict.  If the optional argument is the
+    " string 'backward', the start of the previous conflict will be searched
+    " for.
+    "
+    " This works independently of any conflict-slide locks.  Just move to the
+    " next conflict marker.
+    let l:want_backward = 0
+    if a:0
+        call s:EnforceArgumentMembership(a:000, ['backward'])
+        if s:IsIn('backward', a:000)
+            let l:want_backward = 1
+        endif
+    endif
     let l:starting_line = line('.')
-    let l:searchflags = 'sw' . (a:want_backward ? 'b' : '')
+    let l:searchflags = 'sw' . (l:want_backward ? 'b' : '')
     let l:found_new_location = search(s:CONFLICT_MARKER_START, l:searchflags)
     if l:found_new_location
         let l:new_line = line('.')
-        if (a:want_backward && l:new_line > l:starting_line)
-                    \ || (!a:want_backward && l:new_line < l:starting_line)
+        if (l:want_backward && l:new_line > l:starting_line)
+                    \ || (!l:want_backward && l:new_line < l:starting_line)
             call s:EchoImportant("search wrapped around file borders")
         endif
         return 1
