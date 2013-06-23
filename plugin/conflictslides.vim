@@ -628,10 +628,6 @@ fun! CS_SelectCurrentConflictRange(blink_ms)
     endif
 endfun
 
-fun! CS_isInFileWithLockedConflict()
-    return g:ConflictSlides.isInLockedFile()
-endfun
-
 fun! CS_GetCurrentConflictInfo()
     " Return a dictionary with the following keys grouped in sections.
     "
