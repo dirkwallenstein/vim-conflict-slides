@@ -35,9 +35,13 @@ endfun
 
 fun! s:EnforceArgumentMembership(arguments, valid_arguments)
     " Ensure each item in the list a:arguments is present in
-    " a:valid_arguments.
+    " a:valid_arguments.  Skip empty arguments.
     for l:arg in a:arguments
+        if empty(l:arg)
+            continue
+        endif
         if index(a:valid_arguments, l:arg) == -1
+            echomsg "Allowed arguments: " . string(a:valid_arguments)
             throw "Invalid argument: " . l:arg
         endif
     endfor
@@ -552,15 +556,33 @@ fun! CS_MoveCursorToNextConflict(...)
     endif
 endfun
 
-fun! CS_LockNextConflict(want_restore_current, want_backward)
+fun! CS_LockNextConflict(...)
+    " Move to the next conflict and lock it.  If currently a conflict is
+    " locke, unlock it first.  Influence the behavior with the following
+    " optional arguments:
+    "
+    " 'restore-conflict' : restore the current conflict before unlocking it
+    " 'backward' : reverse the search for the next conflict.
+    let l:backward_request = ''
+    let l:want_restore_current = 0
+    if a:0
+        call s:EnforceArgumentMembership(a:000,
+                    \ ['restore-conflict', 'backward'])
+        if s:IsIn('backward', a:000)
+            let l:backward_request = 'backward'
+        endif
+        if s:IsIn('restore-conflict', a:000)
+            let l:want_restore_current = 1
+        endif
+    endif
     if g:ConflictSlides.locked
         call g:ConflictSlides.positionCursorAtDefaultLocation()
-        if a:want_restore_current
+        if l:want_restore_current
             call g:ConflictSlides.modifyConflictContent('forward')
         endif
         call g:ConflictSlides.releaseLock()
     endif
-    if CS_MoveCursorToNextConflict(0)
+    if CS_MoveCursorToNextConflict(l:backward_request)
         call g:ConflictSlides.lockToCurrentConflict()
     endif
 endfun
