@@ -195,7 +195,7 @@ endfun
 
 let g:ConflictSlides = {}
 
-fun! g:ConflictSlides.releaseLock() dict
+fun! g:ConflictSlides.resetAllVariables() dict
     let self.locked_file = ''
     let self.start_line = 0
     let self.end_line = 0
@@ -209,6 +209,13 @@ fun! g:ConflictSlides.releaseLock() dict
     let self.origin_comment_sep = ''
     let self.locked = 0
     let self.lock_time = 0
+endfun
+
+" initialize
+call g:ConflictSlides.resetAllVariables()
+
+fun! g:ConflictSlides.releaseLock() dict
+    call self.resetAllVariables()
 
     set modifiable
 
@@ -216,9 +223,6 @@ fun! g:ConflictSlides.releaseLock() dict
         call g:conflict_slides_post_release_callback()
     endif
 endfun
-
-" initialize
-call g:ConflictSlides.releaseLock()
 
 fun! g:ConflictSlides.lockToCurrentConflict() dict
     if self.locked
