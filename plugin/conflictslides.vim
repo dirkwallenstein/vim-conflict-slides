@@ -30,6 +30,7 @@ fun! s:EchoImportant(message)
 endf
 
 fun! s:StringToCharList(string)
+    " Split a string into a list of individual characters
     return split(a:string, '\zs')
 endfun
 
@@ -48,6 +49,7 @@ fun! s:EnforceArgumentMembership(arguments, valid_arguments)
 endfun
 
 fun! s:IsIn(member, member_list)
+    " Test if a:member is in a:member_list
     if index(a:member_list, a:member) == -1
         return 0
     else
@@ -222,6 +224,7 @@ endfun
 let g:ConflictSlides = {}
 
 fun! g:ConflictSlides.resetAllVariables() dict
+    " Set all variable keys in ConflictSlides to their unlocked default value.
     let self.start_line = 0
     let self.end_line = 0
 
@@ -241,10 +244,16 @@ fun! g:ConflictSlides.resetAllVariables() dict
     let self.lock_time = 0
 endfun
 
-" initialize
+" Initialize all dictionary variables
 call g:ConflictSlides.resetAllVariables()
 
 fun! g:ConflictSlides.releaseLock() dict
+    " Return to normal operations and loose every information about the
+    " previous conflict.
+    "
+    " Call the user-defined callback g:conflict_slides_post_release_callback()
+    " that can be used to undo changes applied in the corresponding lock
+    " callback.
     if !self.locked
         return
     endif
@@ -259,6 +268,14 @@ fun! g:ConflictSlides.releaseLock() dict
 endfun
 
 fun! g:ConflictSlides.lockToCurrentConflict() dict
+    " Assemble info about the conflict the cursor is currently in.
+    "
+    " Make the file unmodifiable because changes could compromise what is
+    " recognized as the range of lines that belong to the conflict.
+    "
+    " Call the user-defined callback g:conflict_slides_post_lock_callback()
+    " that can be used to apply mappings or change colors in conflict-locked
+    " mode.
     if self.locked
         throw "ConflictSlides: Already locked to a conflict "
                     \ . "in file(" . self.locked_file
@@ -519,6 +536,9 @@ endfun
 " === Exported Functions ===
 
 fun! CS_MoveCursorToCurrentConflict()
+    " Move the cursor to the default location inside the currently locked
+    " conflict.  It will be either the first line of the conflict range or one
+    " line above it if the range is currently empty.
     try
         call g:ConflictSlides.positionCursorAtDefaultLocation()
     catch /CannotPositionCursor/
@@ -558,7 +578,7 @@ endfun
 
 fun! CS_LockNextConflict(...)
     " Move to the next conflict and lock it.  If currently a conflict is
-    " locke, unlock it first.  Influence the behavior with the following
+    " locked, unlock it first.  Influence the behavior with the following
     " optional arguments:
     "
     " 'restore-conflict' : restore the current conflict before unlocking it
