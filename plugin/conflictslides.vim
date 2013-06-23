@@ -474,15 +474,33 @@ fun! g:ConflictSlides.getNewContent(content_type) dict
     endif
 endfun
 
-fun! g:ConflictSlides.modifyConflictContent(content_type, want_append) dict
+fun! g:ConflictSlides.modifyConflictContent(content_type, ...) dict
     " Change the content (the slide) currently displayed in the conflict
-    " range.  See getNewContent for possible content_type values.  If
-    " want_append is true the requested content will be appended to the
-    " current content.  Otherwise the current content will be replaced.
-    call self.enforceLockedLocation('fc')
+    " range.  See getNewContent for possible content_type values.
+    "
+    " If the additional argument 'append' is given the requested content will
+    " be appended to the current content.  Otherwise the current content will
+    " be replaced.
+    "
+    " If the additional argument 'jumpto' is given there won't be an error if
+    " the cursor is currently not within the conflict range.  Note that it is
+    " very easy to jump to the conflict with CS_MoveCursorToCurrentConflict().
+    let l:location_requirement = 'fc'
+    let l:want_append = 0
+    if a:0
+        call s:EnforceArgumentMembership(a:000, ['append', 'jumpto'])
+        if s:IsIn('append', a:000)
+            let l:want_append = 1
+        endif
+        if s:IsIn('jumpto', a:000)
+            let l:location_requirement = 'f'
+        endif
+    endif
+    call self.enforceLockedLocation(l:location_requirement)
+    call self.positionCursorAtDefaultLocation()
     let l:new_content = self.getNewContent(a:content_type)
     set modifiable
-    if !a:want_append && !self.isEmptyContentSlide()
+    if !l:want_append && !self.isEmptyContentSlide()
         execute self.start_line . "," . self.end_line . "delete"
         let self.end_line = self.start_line - 1
     endif
@@ -528,7 +546,7 @@ fun! CS_LockNextConflict(want_restore_current, want_backward)
     if g:ConflictSlides.locked
         call g:ConflictSlides.positionCursorAtDefaultLocation()
         if a:want_restore_current
-            call g:ConflictSlides.modifyConflictContent('forward', 0)
+            call g:ConflictSlides.modifyConflictContent('forward')
         endif
         call g:ConflictSlides.releaseLock()
     endif
