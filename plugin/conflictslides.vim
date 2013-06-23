@@ -476,6 +476,39 @@ fun! CS_MoveCursorToCurrentConflict()
     endtry
 endfun
 
+fun! CS_MoveCursorToNextConflict(want_backward)
+    " Move to the start of the next conflict forward or backward.  This works
+    " independently of any conflict-slide locks.  Just move to the next
+    " conflict marker.
+    let l:starting_line = line('.')
+    let l:searchflags = 'sw' . (a:want_backward ? 'b' : '')
+    let l:found_new_location = search(s:CONFLICT_MARKER_START, l:searchflags)
+    if l:found_new_location
+        let l:new_line = line('.')
+        if (a:want_backward && l:new_line > l:starting_line)
+                    \ || (!a:want_backward && l:new_line < l:starting_line)
+            call s:EchoImportant("search wrapped around file borders")
+        endif
+        return 1
+    else
+        call s:EchoImportant("No conflict found")
+        return 0
+    endif
+endfun
+
+fun! CS_LockNextConflict(want_restore_current, want_backward)
+    if g:ConflictSlides.locked
+        call g:ConflictSlides.positionCursorAtDefaultLocation()
+        if a:want_restore_current
+            call g:ConflictSlides.modifyConflictContent('forward', 0)
+        endif
+        call g:ConflictSlides.releaseLock()
+    endif
+    if CS_MoveCursorToNextConflict(0)
+        call g:ConflictSlides.lockToCurrentConflict()
+    endif
+endfun
+
 fun! CS_isInFileWithLockedConflict()
     return g:ConflictSlides.isInLockedFile()
 endfun
