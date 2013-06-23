@@ -289,11 +289,14 @@ endfun
 fun! g:ConflictSlides.isWithinLockedConflict() dict
     " Return 1 if the cursor is positions inside the locked conflict
     " range.
-    try
-        call self.enforceIsInActiveConflictRange()
-    catch /NotInsideActiveConflict/
+    if !self.isInLockedFile()
         return 0
-    endtry
+    endif
+    if line('.') == self.getCursorDefaultLineNumber()
+        return 1
+    elseif line('.') < self.start_line || line('.') > self.end_line
+        return 0
+    endif
     return 1
 endfun
 
@@ -336,9 +339,7 @@ fun! g:ConflictSlides.enforceIsInActiveConflictRange() dict
         throw "NotInsideActiveConflict: Not in the right file("
                     \ . self.locked_file . ")"
     endif
-    if line('.') == self.getCursorDefaultLineNumber()
-        return
-    elseif line('.') < self.start_line || line('.') > self.end_line
+    if !self.isWithinLockedConflict()
         throw "NotInsideActiveConflict"
     endif
 endfun
