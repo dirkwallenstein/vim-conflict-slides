@@ -43,6 +43,14 @@ fun! s:EnforceArgumentMembership(arguments, valid_arguments)
     endfor
 endfun
 
+fun! s:IsIn(member, member_list)
+    if index(a:member_list, a:member) == -1
+        return 0
+    else
+        return 1
+    endif
+endfun
+
 " === Conflict Info ===
 
 fun! s:GetCurrentConflictRange()
@@ -354,11 +362,11 @@ fun! g:ConflictSlides.enforceLockedLocation(location_flags) dict
         throw "RequirementNotMet: g:ConflictSlides is not "
                     \ . "locked to a conflict."
     endif
-    if index(l:flag_list, 'f') != -1 && !self.isInLockedFile()
+    if s:IsIn('f', l:flag_list) && !self.isInLockedFile()
         throw "RequirementNotMet: Not in the right file("
                     \ . self.locked_file . ")"
     endif
-    if index(l:flag_list, 'c') != -1 && !self.isWithinLockedConflict()
+    if s:IsIn('c', l:flag_list) && !self.isWithinLockedConflict()
         throw "RequirementNotMet: Not within conflict range"
     endif
 endfun
