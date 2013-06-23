@@ -509,6 +509,27 @@ fun! CS_LockNextConflict(want_restore_current, want_backward)
     endif
 endfun
 
+fun! CS_SelectCurrentConflictRange(blink_ms)
+    " Visually select the current conflict range.  Select it permanently by
+    " specifying a blink_ms time of zero.  Otherwise Vim sleeps for the
+    " specified number of milliseconds and undoes the selection afterwards.
+    try
+        call g:ConflictSlides.positionCursorAtDefaultLocation()
+    catch /CannotPositionCursor/
+        call EchoImportant(v:exception)
+        return
+    endtry
+    if g:ConflictSlides.isEmptyContentSlide()
+        return
+    endif
+    exe "normal! V" . g:ConflictSlides.end_line . "Go"
+    if a:blink_ms
+        redraw
+        exe "sleep " . a:blink_ms . " m"
+        exe "normal! V"
+    endif
+endfun
+
 fun! CS_isInFileWithLockedConflict()
     return g:ConflictSlides.isInLockedFile()
 endfun
