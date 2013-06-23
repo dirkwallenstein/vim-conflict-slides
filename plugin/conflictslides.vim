@@ -196,17 +196,21 @@ endfun
 let g:ConflictSlides = {}
 
 fun! g:ConflictSlides.resetAllVariables() dict
-    let self.locked_file = ''
     let self.start_line = 0
     let self.end_line = 0
+
     let self.base_content = ''
     let self.our_content = ''
     let self.their_content = ''
+
     let self.has_base_section = 0
+
     let self.origin_comment_ours = ''
     let self.origin_comment_theirs = ''
     let self.origin_comment_base = ''
     let self.origin_comment_sep = ''
+
+    let self.locked_file = ''
     let self.locked = 0
     let self.lock_time = 0
 endfun
