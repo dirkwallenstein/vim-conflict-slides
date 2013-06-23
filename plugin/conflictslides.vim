@@ -29,6 +29,20 @@ fun! s:EchoImportant(message)
     redraw | echohl WarningMsg | echomsg a:message | echohl None
 endf
 
+fun! s:StringToCharList(string)
+    return split(a:string, '\zs')
+endfun
+
+fun! s:EnforceArgumentMembership(arguments, valid_arguments)
+    " Ensure each item in the list a:arguments is present in
+    " a:valid_arguments.
+    for l:arg in a:arguments
+        if index(a:valid_arguments, l:arg) == -1
+            throw "Invalid argument: " . l:arg
+        endif
+    endfor
+endfun
+
 " === Conflict Info ===
 
 fun! s:GetCurrentConflictRange()
@@ -328,19 +342,24 @@ fun! g:ConflictSlides.positionCursorAtDefaultLocation() dict
     call cursor(self.getCursorDefaultLineNumber(), 0)
 endfun
 
-fun! g:ConflictSlides.enforceIsInActiveConflictRange() dict
-    " Throw an exception if the cursor is not inside a locked conflict
-    " range.
+fun! g:ConflictSlides.enforceLockedLocation(location_flags) dict
+    " Throw an exception if there is no locked conflict or the requirements
+    " specified in a:location_flags are not met.  Valid flags are:
+    " f - the current file is the locked file
+    " c - the cursor is inside the conflict range
+    let l:flag_list = s:StringToCharList(a:location_flags)
+    call s:EnforceArgumentMembership(l:flag_list, ['f', 'c'])
+
     if !self.locked
-        throw "NotInsideActiveConflict: g:ConflictSlides is not "
+        throw "RequirementNotMet: g:ConflictSlides is not "
                     \ . "locked to a conflict."
     endif
-    if !self.isInLockedFile()
-        throw "NotInsideActiveConflict: Not in the right file("
+    if index(l:flag_list, 'f') != -1 && !self.isInLockedFile()
+        throw "RequirementNotMet: Not in the right file("
                     \ . self.locked_file . ")"
     endif
-    if !self.isWithinLockedConflict()
-        throw "NotInsideActiveConflict"
+    if index(l:flag_list, 'c') != -1 && !self.isWithinLockedConflict()
+        throw "RequirementNotMet: Not within conflict range"
     endif
 endfun
 
@@ -452,7 +471,7 @@ fun! g:ConflictSlides.modifyConflictContent(content_type, want_append) dict
     " range.  See getNewContent for possible content_type values.  If
     " want_append is true the requested content will be appended to the
     " current content.  Otherwise the current content will be replaced.
-    call self.enforceIsInActiveConflictRange()
+    call self.enforceLockedLocation('fc')
     let l:new_content = self.getNewContent(a:content_type)
     set modifiable
     if !a:want_append && !self.isEmptyContentSlide()
