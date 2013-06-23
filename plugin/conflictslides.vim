@@ -219,6 +219,10 @@ endfun
 call g:ConflictSlides.resetAllVariables()
 
 fun! g:ConflictSlides.releaseLock() dict
+    if !self.locked
+        return
+    endif
+
     call self.resetAllVariables()
 
     set modifiable
