@@ -212,10 +212,14 @@ fun! s:GetConflictInfo_AddConflictMarkerComments(info)
                 \ a:info.linenumber_start, s:CONFLICT_MARKER_START)
     let a:info.marker_comment_end = s:GetConflictInfo_GetMarkerComment(
                 \ a:info.linenumber_end, s:CONFLICT_MARKER_END)
-    let a:info.marker_comment_base = s:GetConflictInfo_GetMarkerComment(
-                \ a:info.linenumber_base, s:CONFLICT_MARKER_BASE)
     let a:info.marker_comment_separator = s:GetConflictInfo_GetMarkerComment(
                 \ a:info.linenumber_separator, s:CONFLICT_MARKER_SEPARATOR)
+    if a:info.linenumber_base
+        let a:info.marker_comment_base = s:GetConflictInfo_GetMarkerComment(
+                    \ a:info.linenumber_base, s:CONFLICT_MARKER_BASE)
+    else
+        let a:info.marker_comment_base = ''
+    endif
 endfun
 
 
