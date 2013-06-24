@@ -293,8 +293,7 @@ fun! g:ConflictSlides.lockToCurrentConflict() dict
     " that can be used to apply mappings or change colors in conflict-locked
     " mode.
     if self.locked
-        throw "ConflictSlides: Already locked to a conflict: "
-                    \ . self.getCurrentLockInfo()
+        throw "AlreadyLocked" . self.getCurrentLockInfo()
     endif
     let l:conflict_info = CS_GetCurrentConflictInfo()
 
@@ -549,6 +548,39 @@ endfun
 
 " === Exported Functions ===
 
+fun! CS_LockCurrentConflict(...)
+    " Lock the current conflict delineated by conflict markers.  The optional
+    " argument 'unlock-previous' will unlock the currently locked conflict.
+    " Otherwise it is an error if a conflict is currently locked.
+    let l:lock_info = g:ConflictSlides.getCurrentLockInfo()
+    let l:want_unlock = 0
+    if a:0
+        call s:EnforceArgumentMembership(a:000, ['unlock-previous'])
+        if s:IsIn('unlock-previous', a:000)
+            let l:want_unlock = 1
+        endif
+    endif
+    if g:ConflictSlides.locked && l:want_unlock
+        call g:ConflictSlides.releaseLock()
+    endif
+    try
+        call g:ConflictSlides.lockToCurrentConflict()
+    catch /AlreadyLocked/
+        call s:EchoImportant("Already locked to a conflict: " . l:lock_info
+        return
+    catch /NotInsideConflictMarkers/
+        call s:EchoImportant("Cannot lock.  Not inside conflict markers.")
+        return
+    endtry
+endfun
+
+fun! CS_ReleaseLockedConflict()
+    if !g:ConflictSlides.locked
+        call s:EchoImportant("No conflict was locked")
+    endif
+    call g:ConflictSlides.releaseLock()
+endfun
+
 fun! CS_MoveCursorToCurrentConflict()
     " Move the cursor to the default location inside the currently locked
     " conflict.  It will be either the first line of the conflict range or one
@@ -676,7 +708,7 @@ fun! CS_GetCurrentConflictInfo()
 
     let l:range = s:GetCurrentConflictRange()
     if empty(l:range)
-        throw "GetConflictInfo: Not inside conflict markers"
+        throw "NotInsideConflictMarkers"
     endif
     let [
                 \ l:conflict_info.linenumber_start,
