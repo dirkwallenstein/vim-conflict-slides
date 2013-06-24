@@ -393,15 +393,15 @@ fun! g:ConflictSlides.enforceLockedLocation(location_flags) dict
     call s:EnforceArgumentMembership(l:flag_list, ['f', 'c'])
 
     if !self.locked
-        throw "RequirementNotMet: g:ConflictSlides is not "
+        throw "LocationRequirementNotMet: g:ConflictSlides is not "
                     \ . "locked to a conflict."
     endif
     if s:IsIn('f', l:flag_list) && !self.isInLockedFile()
-        throw "RequirementNotMet: Not in the right file("
+        throw "LocationRequirementNotMet: Not in the right file("
                     \ . self.locked_file . ")"
     endif
     if s:IsIn('c', l:flag_list) && !self.isWithinLockedConflict()
-        throw "RequirementNotMet: Not within conflict range"
+        throw "LocationRequirementNotMet: Not within conflict range"
     endif
 endfun
 
@@ -450,8 +450,7 @@ endfun
 fun! g:ConflictSlides.getNewContent_Simple(content_map, request) dict
     " A delegate of getNewContent that covers the cases without
     " conflict markers.
-    let l:base_not_available_error_message = "InvalidContentRequest: "
-                \ . "Base content not available through conflict markers"
+    let l:base_not_available_error_message = "BaseNotAvailable"
 
     let l:combination_list = split(a:request)
 
@@ -576,9 +575,47 @@ endfun
 
 fun! CS_ReleaseLockedConflict()
     if !g:ConflictSlides.locked
-        call s:EchoImportant("No conflict was locked")
+        call s:EchoImportant("No conflict is locked")
     endif
     call g:ConflictSlides.releaseLock()
+endfun
+
+fun! CS_ModifyConflictContent(content_type, ...)
+    " Change the content (the slide) currently displayed in the locked conflict.
+    " Possible content_type arguments are as follows:
+    "
+    " The content from the corresponding section of the conflict markers.
+    " You can join multiple of these strings separated by space and they will
+    " be inserted in order.  For example 'ours theirs'.
+    "   'ours'
+    "   'theirs'
+    "   'base'
+    "
+    " Conflict content with markers.
+    "   'forward' : the original conflict content before locking
+    "   'forward-nobase' : the same as forward but suppress the base section
+    "   'reverse' : like forward with the ours and theirs section exchanged.
+    "   'reverse-nobase' : the same as reverse but suppress the base section
+    "
+    " ---
+    "
+    " The behavior can be influenced with the following optional arguments:
+    "   'append' : append the new content to the current content
+    "   'jumpto' : jump to the conflict first.  Otherwise it is an error if
+    "           the cursor is not positioned inside the conflict range so that
+    "           you can be sure to modify the conflict you are looking at.
+    if !g:ConflictSlides.locked
+        call s:EchoImportant("No conflict is locked")
+        return
+    endif
+    try
+        call call(g:ConflictSlides.modifyConflictContent, [a:content_type] + a:000, g:ConflictSlides)
+    catch /BaseNotAvailable/
+        call s:EchoImportant("No base content available.  The conflict "
+                    \ . "markers did not contain a base section.")
+    catch /LocationRequirementNotMet/
+        call s:EchoImportant(v:exception)
+    endtry
 endfun
 
 fun! CS_MoveCursorToCurrentConflict()
