@@ -711,6 +711,14 @@ fun! CS_SelectCurrentConflictRange(blink_ms)
     endif
 endfun
 
+fun! CS_DisplayCurrentLockInfo()
+    if !g:ConflictSlides.locked
+        call s:EchoImportant("No conflict is locked")
+    else
+        echo g:ConflictSlides.getCurrentLockInfo()
+    endif
+endfun
+
 fun! CS_GetCurrentConflictInfo()
     " Return a dictionary with the following keys grouped in sections.
     "
