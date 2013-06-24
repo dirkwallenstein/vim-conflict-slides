@@ -225,9 +225,9 @@ endfun
 
 " === Conflict Slides ===
 
-let g:ConflictSlides = {}
+let s:ConflictSlides = {}
 
-fun! g:ConflictSlides.resetAllVariables() dict
+fun! s:ConflictSlides.resetAllVariables() dict
     " Set all variable keys in ConflictSlides to their unlocked default value.
     let self.start_line = 0
     let self.end_line = 0
@@ -249,9 +249,9 @@ fun! g:ConflictSlides.resetAllVariables() dict
 endfun
 
 " Initialize all dictionary variables
-call g:ConflictSlides.resetAllVariables()
+call s:ConflictSlides.resetAllVariables()
 
-fun! g:ConflictSlides.releaseLock() dict
+fun! s:ConflictSlides.releaseLock() dict
     " Return to normal operations and loose every information about the
     " previous conflict.
     "
@@ -271,7 +271,7 @@ fun! g:ConflictSlides.releaseLock() dict
     endif
 endfun
 
-fun! g:ConflictSlides.getCurrentLockInfo()
+fun! s:ConflictSlides.getCurrentLockInfo()
     " Return a string with infos about the currently held lock or an empty
     " string if no lock is currently held
     if self.locked
@@ -283,7 +283,7 @@ fun! g:ConflictSlides.getCurrentLockInfo()
     endif
 endfun
 
-fun! g:ConflictSlides.lockToCurrentConflict() dict
+fun! s:ConflictSlides.lockToCurrentConflict() dict
     " Assemble info about the conflict the cursor is currently in.
     "
     " Make the file unmodifiable because changes could compromise what is
@@ -324,7 +324,7 @@ fun! g:ConflictSlides.lockToCurrentConflict() dict
     endif
 endfun
 
-fun! g:ConflictSlides.isEmptyContentSlide() dict
+fun! s:ConflictSlides.isEmptyContentSlide() dict
     " Return 1 if the conflict range is currently empty
     if !self.locked || self.end_line >= self.start_line
         return 0
@@ -333,7 +333,7 @@ fun! g:ConflictSlides.isEmptyContentSlide() dict
     endif
 endfun
 
-fun! g:ConflictSlides.isInLockedFile() dict
+fun! s:ConflictSlides.isInLockedFile() dict
     " Return 1 if the current file is the one with a locked conflict.
     if !self.locked || self.locked_file != resolve(expand('%:p'))
         return 0
@@ -342,7 +342,7 @@ fun! g:ConflictSlides.isInLockedFile() dict
     endif
 endfun
 
-fun! g:ConflictSlides.isWithinLockedConflict() dict
+fun! s:ConflictSlides.isWithinLockedConflict() dict
     " Return 1 if the cursor is positions inside the locked conflict
     " range.
     if !self.isInLockedFile()
@@ -356,7 +356,7 @@ fun! g:ConflictSlides.isWithinLockedConflict() dict
     return 1
 endfun
 
-fun! g:ConflictSlides.getCursorDefaultLineNumber() dict
+fun! s:ConflictSlides.getCursorDefaultLineNumber() dict
     " Return the Cursor line number where the cursor is positioned in
     " the default case.
     " This factors in empty content -- also at the start and end of a
@@ -371,7 +371,7 @@ fun! g:ConflictSlides.getCursorDefaultLineNumber() dict
     return l:cursor_line_number
 endfun
 
-fun! g:ConflictSlides.positionCursorAtDefaultLocation() dict
+fun! s:ConflictSlides.positionCursorAtDefaultLocation() dict
     " Move the cursor to a position that is always considered to be
     " inside the conflict range.
     if !self.locked
@@ -384,7 +384,7 @@ fun! g:ConflictSlides.positionCursorAtDefaultLocation() dict
     call cursor(self.getCursorDefaultLineNumber(), 0)
 endfun
 
-fun! g:ConflictSlides.enforceConflictConditions(location_flags) dict
+fun! s:ConflictSlides.enforceConflictConditions(location_flags) dict
     " Throw an exception if the requirements specified in a:location_flags are
     " not met.  Valid flags are:
     " l - a conflict is locked
@@ -397,7 +397,7 @@ fun! g:ConflictSlides.enforceConflictConditions(location_flags) dict
     call s:EnforceArgumentMembership(l:flag_list, ['l', 'f', 'c', 'E'])
 
     if s:IsIn('l', l:flag_list) && !self.locked
-        throw "ConflictConditionsNotMet: g:ConflictSlides is not "
+        throw "ConflictConditionsNotMet: s:ConflictSlides is not "
                     \ . "locked to a conflict."
     endif
     if s:IsIn('f', l:flag_list) && !self.isInLockedFile()
@@ -412,7 +412,7 @@ fun! g:ConflictSlides.enforceConflictConditions(location_flags) dict
     endif
 endfun
 
-fun! g:ConflictSlides.getMarkerLine(marker, comment) dict
+fun! s:ConflictSlides.getMarkerLine(marker, comment) dict
     " Return a:marker, appended by space and a:comment if a:comment is
     " not empty.
     if empty(a:comment)
@@ -422,7 +422,7 @@ fun! g:ConflictSlides.getMarkerLine(marker, comment) dict
     endif
 endfun
 
-fun! g:ConflictSlides.getNewContent_Complex(want_reverse, force_no_base) dict
+fun! s:ConflictSlides.getNewContent_Complex(want_reverse, force_no_base) dict
     " A delegate of getNewContent that covers the cases with conflict
     " markers.
     let l:top_content = self.our_content
@@ -454,7 +454,7 @@ fun! g:ConflictSlides.getNewContent_Complex(want_reverse, force_no_base) dict
     return l:all_new_content
 endfun
 
-fun! g:ConflictSlides.getNewContent_Simple(content_map, request) dict
+fun! s:ConflictSlides.getNewContent_Simple(content_map, request) dict
     " A delegate of getNewContent that covers the cases without
     " conflict markers.
     let l:base_not_available_error_message = "BaseNotAvailable"
@@ -491,7 +491,7 @@ fun! g:ConflictSlides.getNewContent_Simple(content_map, request) dict
 endfun
 
 let s:__base_key = 'base'
-fun! g:ConflictSlides.getNewContent(content_type) dict
+fun! s:ConflictSlides.getNewContent(content_type) dict
     " Return a list of content lines according to the request in
     " a:content_type.
     " Possible requests are the strings seen here in this function and a
@@ -514,7 +514,7 @@ fun! g:ConflictSlides.getNewContent(content_type) dict
     endif
 endfun
 
-fun! g:ConflictSlides.modifyConflictContent(content_type, ...) dict
+fun! s:ConflictSlides.modifyConflictContent(content_type, ...) dict
     " Change the content (the slide) currently displayed in the conflict
     " range.  See getNewContent for possible content_type values.
     "
@@ -558,7 +558,7 @@ fun! CS_LockCurrentConflict(...)
     " Lock the current conflict delineated by conflict markers.  The optional
     " argument 'unlock-previous' will unlock the currently locked conflict.
     " Otherwise it is an error if a conflict is currently locked.
-    let l:lock_info = g:ConflictSlides.getCurrentLockInfo()
+    let l:lock_info = s:ConflictSlides.getCurrentLockInfo()
     let l:want_unlock = 0
     if a:0
         call s:EnforceArgumentMembership(a:000, ['unlock-previous'])
@@ -566,11 +566,11 @@ fun! CS_LockCurrentConflict(...)
             let l:want_unlock = 1
         endif
     endif
-    if g:ConflictSlides.locked && l:want_unlock
-        call g:ConflictSlides.releaseLock()
+    if s:ConflictSlides.locked && l:want_unlock
+        call s:ConflictSlides.releaseLock()
     endif
     try
-        call g:ConflictSlides.lockToCurrentConflict()
+        call s:ConflictSlides.lockToCurrentConflict()
     catch /AlreadyLocked/
         call s:EchoImportant("Already locked to a conflict: " . l:lock_info
         return
@@ -581,10 +581,10 @@ fun! CS_LockCurrentConflict(...)
 endfun
 
 fun! CS_ReleaseLockedConflict()
-    if !g:ConflictSlides.locked
+    if !s:ConflictSlides.locked
         call s:EchoImportant("No conflict is locked")
     endif
-    call g:ConflictSlides.releaseLock()
+    call s:ConflictSlides.releaseLock()
 endfun
 
 fun! CS_ModifyConflictContent(content_type, ...)
@@ -611,12 +611,12 @@ fun! CS_ModifyConflictContent(content_type, ...)
     "   'jumpto' : jump to the conflict first.  Otherwise it is an error if
     "           the cursor is not positioned inside the conflict range so that
     "           you can be sure to modify the conflict you are looking at.
-    if !g:ConflictSlides.locked
+    if !s:ConflictSlides.locked
         call s:EchoImportant("No conflict is locked")
         return
     endif
     try
-        call call(g:ConflictSlides.modifyConflictContent, [a:content_type] + a:000, g:ConflictSlides)
+        call call(s:ConflictSlides.modifyConflictContent, [a:content_type] + a:000, s:ConflictSlides)
     catch /BaseNotAvailable/
         call s:EchoImportant("No base content available.  The conflict "
                     \ . "markers did not contain a base section.")
@@ -630,7 +630,7 @@ fun! CS_MoveCursorToCurrentConflict()
     " conflict.  It will be either the first line of the conflict range or one
     " line above it if the range is currently empty.
     try
-        call g:ConflictSlides.positionCursorAtDefaultLocation()
+        call s:ConflictSlides.positionCursorAtDefaultLocation()
     catch /CannotPositionCursor/
         call s:EchoImportant(v:exception)
     endtry
@@ -685,15 +685,15 @@ fun! CS_LockNextConflict(...)
             let l:want_restore_current = 1
         endif
     endif
-    if g:ConflictSlides.locked
-        call g:ConflictSlides.positionCursorAtDefaultLocation()
+    if s:ConflictSlides.locked
+        call s:ConflictSlides.positionCursorAtDefaultLocation()
         if l:want_restore_current
-            call g:ConflictSlides.modifyConflictContent('forward')
+            call s:ConflictSlides.modifyConflictContent('forward')
         endif
-        call g:ConflictSlides.releaseLock()
+        call s:ConflictSlides.releaseLock()
     endif
     if CS_MoveCursorToNextConflict(l:backward_request)
-        call g:ConflictSlides.lockToCurrentConflict()
+        call s:ConflictSlides.lockToCurrentConflict()
     endif
 endfun
 
@@ -702,15 +702,15 @@ fun! CS_SelectCurrentConflictRange(blink_ms)
     " specifying a blink_ms time of zero.  Otherwise Vim sleeps for the
     " specified number of milliseconds and undoes the selection afterwards.
     try
-        call g:ConflictSlides.positionCursorAtDefaultLocation()
+        call s:ConflictSlides.positionCursorAtDefaultLocation()
     catch /CannotPositionCursor/
         call s:EchoImportant(v:exception)
         return
     endtry
-    if g:ConflictSlides.isEmptyContentSlide()
+    if s:ConflictSlides.isEmptyContentSlide()
         return
     endif
-    exe "normal! V" . g:ConflictSlides.end_line . "Go"
+    exe "normal! V" . s:ConflictSlides.end_line . "Go"
     if a:blink_ms
         redraw
         exe "sleep " . a:blink_ms . " m"
@@ -719,10 +719,10 @@ fun! CS_SelectCurrentConflictRange(blink_ms)
 endfun
 
 fun! CS_DisplayCurrentLockInfo()
-    if !g:ConflictSlides.locked
+    if !s:ConflictSlides.locked
         call s:EchoImportant("No conflict is locked")
     else
-        echo g:ConflictSlides.getCurrentLockInfo()
+        echo s:ConflictSlides.getCurrentLockInfo()
     endif
 endfun
 
@@ -734,7 +734,7 @@ fun! CS_QueryState(state)
     "   c - the cursor is inside the locked conflict range
     "   E - the current conflict content is non-empty
     try
-        call g:ConflictSlides.enforceConflictConditions(a:state)
+        call s:ConflictSlides.enforceConflictConditions(a:state)
     catch /ConflictConditionsNotMet/
         return 0
     endtry
