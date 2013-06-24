@@ -698,9 +698,10 @@ fun! CS_LockNextConflict(...)
 endfun
 
 fun! CS_SelectCurrentConflictRange(blink_ms)
-    " Visually select the current conflict range.  Select it permanently by
-    " specifying a blink_ms time of zero.  Otherwise Vim sleeps for the
-    " specified number of milliseconds and undoes the selection afterwards.
+    " Visually select the currently locked conflict range.  Select it
+    " permanently by specifying a blink_ms time of zero.  Otherwise Vim sleeps
+    " for the specified number of milliseconds and undoes the selection
+    " afterwards.
     try
         call s:ConflictSlides.positionCursorAtDefaultLocation()
     catch /CannotPositionCursor/
@@ -719,6 +720,7 @@ fun! CS_SelectCurrentConflictRange(blink_ms)
 endfun
 
 fun! CS_DisplayCurrentLockInfo()
+    " Echo info about the currently locked conflict.
     if !s:ConflictSlides.locked
         call s:EchoImportant("No conflict is locked")
     else
@@ -730,7 +732,7 @@ fun! CS_QueryState(state)
     " Return 1 if all the state flags given in a:state are true.  Valid flags
     " are the following chars:
     "   l - a conflict is locked
-    "   f - the current file is the locked file
+    "   f - the current file is the file with the locked conflict
     "   c - the cursor is inside the locked conflict range
     "   E - the current conflict content is non-empty
     try
