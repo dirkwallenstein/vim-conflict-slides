@@ -384,24 +384,31 @@ fun! g:ConflictSlides.positionCursorAtDefaultLocation() dict
     call cursor(self.getCursorDefaultLineNumber(), 0)
 endfun
 
-fun! g:ConflictSlides.enforceLockedLocation(location_flags) dict
-    " Throw an exception if there is no locked conflict or the requirements
-    " specified in a:location_flags are not met.  Valid flags are:
+fun! g:ConflictSlides.enforceConflictConditions(location_flags) dict
+    " Throw an exception if the requirements specified in a:location_flags are
+    " not met.  Valid flags are:
+    " l - a conflict is locked
     " f - the current file is the locked file
     " c - the cursor is inside the conflict range
+    " E - the current conflict content is non-empty
+    "
+    " Exceptions are raised in the order given in the above list.
     let l:flag_list = s:StringToCharList(a:location_flags)
-    call s:EnforceArgumentMembership(l:flag_list, ['f', 'c'])
+    call s:EnforceArgumentMembership(l:flag_list, ['l', 'f', 'c', 'E'])
 
-    if !self.locked
-        throw "LocationRequirementNotMet: g:ConflictSlides is not "
+    if s:IsIn('l', l:flag_list) && !self.locked
+        throw "ConflictConditionsNotMet: g:ConflictSlides is not "
                     \ . "locked to a conflict."
     endif
     if s:IsIn('f', l:flag_list) && !self.isInLockedFile()
-        throw "LocationRequirementNotMet: Not in the right file("
+        throw "ConflictConditionsNotMet: Not in the right file("
                     \ . self.locked_file . ")"
     endif
     if s:IsIn('c', l:flag_list) && !self.isWithinLockedConflict()
-        throw "LocationRequirementNotMet: Not within conflict range"
+        throw "ConflictConditionsNotMet: Not within conflict range"
+    endif
+    if s:IsIn('E', l:flag_list) && self.isEmptyContentSlide()
+        throw "ConflictConditionsNotMet: No conflict content"
     endif
 endfun
 
@@ -518,7 +525,7 @@ fun! g:ConflictSlides.modifyConflictContent(content_type, ...) dict
     " If the additional argument 'jumpto' is given there won't be an error if
     " the cursor is currently not within the conflict range.  Note that it is
     " very easy to jump to the conflict with CS_MoveCursorToCurrentConflict().
-    let l:location_requirement = 'fc'
+    let l:location_requirement = 'lfc'
     let l:want_append = 0
     if a:0
         call s:EnforceArgumentMembership(a:000, ['append', 'jumpto'])
@@ -526,10 +533,10 @@ fun! g:ConflictSlides.modifyConflictContent(content_type, ...) dict
             let l:want_append = 1
         endif
         if s:IsIn('jumpto', a:000)
-            let l:location_requirement = 'f'
+            let l:location_requirement = 'lf'
         endif
     endif
-    call self.enforceLockedLocation(l:location_requirement)
+    call self.enforceConflictConditions(l:location_requirement)
     call self.positionCursorAtDefaultLocation()
     let l:new_content = self.getNewContent(a:content_type)
     set modifiable
@@ -613,7 +620,7 @@ fun! CS_ModifyConflictContent(content_type, ...)
     catch /BaseNotAvailable/
         call s:EchoImportant("No base content available.  The conflict "
                     \ . "markers did not contain a base section.")
-    catch /LocationRequirementNotMet/
+    catch /ConflictConditionsNotMet/
         call s:EchoImportant(v:exception)
     endtry
 endfun
@@ -717,6 +724,21 @@ fun! CS_DisplayCurrentLockInfo()
     else
         echo g:ConflictSlides.getCurrentLockInfo()
     endif
+endfun
+
+fun! CS_QueryState(state)
+    " Return 1 if all the state flags given in a:state are true.  Valid flags
+    " are the following chars:
+    "   l - a conflict is locked
+    "   f - the current file is the locked file
+    "   c - the cursor is inside the locked conflict range
+    "   E - the current conflict content is non-empty
+    try
+        call g:ConflictSlides.enforceConflictConditions(a:state)
+    catch /ConflictConditionsNotMet/
+        return 0
+    endtry
+    return 1
 endfun
 
 fun! CS_GetCurrentConflictInfo()
