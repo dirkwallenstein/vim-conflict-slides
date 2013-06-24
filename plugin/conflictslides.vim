@@ -267,6 +267,18 @@ fun! g:ConflictSlides.releaseLock() dict
     endif
 endfun
 
+fun! g:ConflictSlides.getCurrentLockInfo()
+    " Return a string with infos about the currently held lock or an empty
+    " string if no lock is currently held
+    if self.locked
+        return "file(" . self.locked_file
+                    \ . ") line(" . self.start_line
+                    \ . ") lock-time(" . strftime("%H:%M", self.lock_time) . ")."
+    else
+        return ''
+    endif
+endfun
+
 fun! g:ConflictSlides.lockToCurrentConflict() dict
     " Assemble info about the conflict the cursor is currently in.
     "
@@ -277,10 +289,8 @@ fun! g:ConflictSlides.lockToCurrentConflict() dict
     " that can be used to apply mappings or change colors in conflict-locked
     " mode.
     if self.locked
-        throw "ConflictSlides: Already locked to a conflict "
-                    \ . "in file(" . self.locked_file
-                    \ . ") line(" . self.start_line
-                    \ . ") at time(" . strftime("%H:%M", self.lock_time) . ")."
+        throw "ConflictSlides: Already locked to a conflict: "
+                    \ . self.getCurrentLockInfo()
     endif
     let l:conflict_info = CS_GetCurrentConflictInfo()
 
