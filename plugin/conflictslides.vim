@@ -628,7 +628,7 @@ fun! CS_SelectCurrentConflictRange(blink_ms)
     try
         call g:ConflictSlides.positionCursorAtDefaultLocation()
     catch /CannotPositionCursor/
-        call EchoImportant(v:exception)
+        call s:EchoImportant(v:exception)
         return
     endtry
     if g:ConflictSlides.isEmptyContentSlide()
