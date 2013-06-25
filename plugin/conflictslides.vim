@@ -668,6 +668,9 @@ fun! CS_LockNextConflict(...)
     endif
     if CS_MoveCursorToNextConflict(l:backward_request)
         call s:ConflictSlides.lockToCurrentConflict()
+        return 1
+    else
+        return 0
     endif
 endfun
 
