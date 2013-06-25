@@ -277,7 +277,8 @@ fun! s:ConflictSlides.getCurrentLockInfo()
     if self.locked
         return "file(" . self.locked_file
                     \ . ") line(" . self.start_line
-                    \ . ") lock-time(" . strftime("%H:%M", self.lock_time) . ")."
+                    \ . ") lock-time(" . strftime("%H:%M", self.lock_time)
+                    \ . ")."
     else
         return ''
     endif
@@ -590,8 +591,8 @@ fun! CS_ReleaseLockedConflict()
 endfun
 
 fun! CS_ModifyConflictContent(content_type, ...)
-    " Change the content (the slide) currently displayed in the locked conflict.
-    " Possible content_type arguments are as follows:
+    " Change the content (the slide) currently displayed in the locked
+    " conflict.  Possible content_type arguments are as follows:
     "
     " The content from the corresponding section of the conflict markers.
     " You can join multiple of these strings separated by space and they will
@@ -618,7 +619,8 @@ fun! CS_ModifyConflictContent(content_type, ...)
         return
     endif
     try
-        call call(s:ConflictSlides.modifyConflictContent, [a:content_type] + a:000, s:ConflictSlides)
+        call call(s:ConflictSlides.modifyConflictContent,
+                    \ [a:content_type] + a:000, s:ConflictSlides)
     catch /BaseNotAvailable/
         call s:EchoImportant("No base content available.  The conflict "
                     \ . "markers did not contain a base section.")
