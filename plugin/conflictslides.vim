@@ -575,7 +575,7 @@ fun! CS_LockCurrentConflict(...)
     try
         call s:ConflictSlides.lockToCurrentConflict()
     catch /AlreadyLocked/
-        call s:EchoImportant("Already locked to a conflict: " . l:lock_info
+        call s:EchoImportant("Already locked to a conflict: " . l:lock_info)
         return
     catch /NotInsideConflictMarkers/
         call s:EchoImportant("Cannot lock.  Not inside conflict markers.")
