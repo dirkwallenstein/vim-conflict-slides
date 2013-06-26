@@ -647,17 +647,16 @@ fun! CS_LockNextConflict(...)
     "
     " 'restore-conflict' : restore the current conflict before unlocking it
     " 'backward' : reverse the search for the next conflict.
-    let l:backward_request = ''
+    " 'no-wrap' : do not wrap around file boundaries.
+    let l:delegate_args = []
     let l:want_restore_current = 0
     if a:0
         call s:EnforceArgumentMembership(a:000,
-                    \ ['restore-conflict', 'backward'])
-        if s:IsIn('backward', a:000)
-            let l:backward_request = 'backward'
-        endif
+                    \ ['restore-conflict', 'backward', 'no-wrap'])
         if s:IsIn('restore-conflict', a:000)
             let l:want_restore_current = 1
         endif
+        let l:delegate_args = filter(copy(a:000), 'v:val != "restore-conflict"')
     endif
     if s:ConflictSlides.locked
         call s:ConflictSlides.positionCursorAtDefaultLocation()
@@ -666,7 +665,7 @@ fun! CS_LockNextConflict(...)
         endif
         call s:ConflictSlides.releaseLock()
     endif
-    if CS_MoveCursorToNextConflict(l:backward_request)
+    if call('CS_MoveCursorToNextConflict', l:delegate_args)
         call s:ConflictSlides.lockToCurrentConflict()
         return 1
     else
@@ -772,21 +771,28 @@ fun! CS_GetCurrentConflictInfo()
 endfun
 
 fun! CS_MoveCursorToNextConflict(...)
-    " Move to the start of the next conflict.  If the optional argument is the
-    " string 'backward', the start of the previous conflict will be searched
-    " for.
+    " Move to the start of the next conflict.  The following optional
+    " arguments can be specified:
+    " 'backward' : search for the previous conflict
+    " 'no-wrap' : Do not wrap around file borders
     "
     " This works independently of any conflict-slide locks.  Just move to the
     " next conflict marker.
     let l:want_backward = 0
+    let l:want_wrap = 1
     if a:0
-        call s:EnforceArgumentMembership(a:000, ['backward'])
+        call s:EnforceArgumentMembership(a:000, ['backward', 'no-wrap'])
         if s:IsIn('backward', a:000)
             let l:want_backward = 1
         endif
+        if s:IsIn('no-wrap', a:000)
+            let l:want_wrap = 0
+        endif
     endif
     let l:starting_line = line('.')
-    let l:searchflags = 'sw' . (l:want_backward ? 'b' : '')
+    let l:searchflags = 's'
+                \ . (l:want_backward ? 'b' : '')
+                \ . (l:want_wrap ? 'w' : 'W')
     let l:found_new_location = search(s:CONFLICT_MARKER_START, l:searchflags)
     if l:found_new_location
         let l:new_line = line('.')
