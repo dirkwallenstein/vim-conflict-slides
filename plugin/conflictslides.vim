@@ -295,7 +295,7 @@ fun! s:ConflictSlides.releaseLock() dict
     " Return to normal operations and loose every information about the
     " previous conflict.
     "
-    " Call the user-defined callback g:conflict_slides_post_release_callback()
+    " Call the user-defined callback g:conflict_slides_post_unlock_callback()
     " that can be used to undo changes applied in the corresponding lock
     " callback.
     if !self.locked
@@ -310,8 +310,8 @@ fun! s:ConflictSlides.releaseLock() dict
 
     set modifiable
 
-    if exists("*g:conflict_slides_post_release_callback")
-        call g:conflict_slides_post_release_callback()
+    if exists("*g:conflict_slides_post_unlock_callback")
+        call g:conflict_slides_post_unlock_callback()
     endif
 endfun
 
