@@ -17,6 +17,46 @@ if (exists("g:loaded_conflictslides") && g:loaded_conflictslides)
 endif
 let g:loaded_conflictslides = 1
 
+" === Configuration ===
+
+if ! exists( "g:conflictslides_handle_locked_mappings" )
+    " Apply the buffer-local mappings given in g:conflictslides_locked_mappings
+    " during the time a conflict is locked.  If you have any *buffer-local*
+    " mappings on the keys of that dictionary they will not be restored during
+    " unlocking.
+    let g:conflictslides_handle_locked_mappings = 1
+endif
+
+if ! exists( "g:conflictslides_locked_mappings" )
+    " These are the default mappings used when
+    " g:conflictslides_handle_locked_mappings is not zero.  You can make a
+    " copy and adapt it in your configuration.
+    let g:conflictslides_locked_mappings = {
+            \ 'b' : ":call CS_ModifyConflictContent('base')<CR>",
+            \ 'B' : ":call CS_ModifyConflictContent('base', 'append')<CR>",
+            \ 'o' : ":call CS_ModifyConflictContent('ours')<CR>",
+            \ 'O' : ":call CS_ModifyConflictContent('ours', 'append')<CR>",
+            \ 't' : ":call CS_ModifyConflictContent('theirs')<CR>",
+            \ 'T' : ":call CS_ModifyConflictContent('theirs', 'append')<CR>",
+            \ 'a' : ":call CS_ModifyConflictContent('ours theirs')<CR>",
+            \ 'A' : ":call CS_ModifyConflictContent('theirs ours')<CR>",
+            \ 'f' : ":call CS_ModifyConflictContent('forward')<CR>",
+            \ 'r' : ":call CS_ModifyConflictContent('reverse')<CR>",
+            \ 'F' : ":call CS_ModifyConflictContent('forward-nobase')<CR>",
+            \ 'R' : ":call CS_ModifyConflictContent('reverse-nobase')<CR>",
+            \
+            \ 'e' : ":call CS_ReleaseLockedConflict()<CR>",
+            \ 'q' : ":call CS_ModifyConflictContent('forward')<Bar>"
+            \               . "call CS_ReleaseLockedConflict()<CR>",
+            \ '<CR>' : ":call CS_LockNextConflict()<CR>",
+            \ '<BS>' : ":call CS_LockNextConflict('restore-conflict')<CR>",
+            \
+            \ 'V' : ":call CS_SelectCurrentConflictRange(0)<CR>",
+            \ 'v' : ":call CS_SelectCurrentConflictRange(500)<CR>",
+            \ }
+endif
+
+" === Helper objects ===
 
 let s:CONFLICT_MARKER_START = '<<<<<<<'
 let s:CONFLICT_MARKER_END = '>>>>>>>'
@@ -264,6 +304,10 @@ fun! s:ConflictSlides.releaseLock() dict
 
     call self.resetAllVariables()
 
+    if g:conflictslides_handle_locked_mappings
+        call self.handleLockedMappings(1)
+    endif
+
     set modifiable
 
     if exists("*g:conflict_slides_post_release_callback")
@@ -320,9 +364,26 @@ fun! s:ConflictSlides.lockToCurrentConflict() dict
 
     set nomodifiable
 
+    if g:conflictslides_handle_locked_mappings
+        call self.handleLockedMappings(0)
+    endif
+
     if exists("*g:conflict_slides_post_lock_callback")
         call g:conflict_slides_post_lock_callback()
     endif
+endfun
+
+fun! s:ConflictSlides.handleLockedMappings(want_unmap) dict
+    " If a:want_unmap is zero, apply the mappings configured in
+    " g:conflictslides_locked_mappings or remove them otherwise.
+    for [mapping, expansion] in items(g:conflictslides_locked_mappings)
+        if a:want_unmap
+            execute "nunmap <buffer> " . mapping
+        else
+            execute "nnoremap <buffer><silent> "
+                        \ . mapping . " " . expansion
+        endif
+    endfor
 endfun
 
 fun! s:ConflictSlides.isEmptyContentSlide() dict
