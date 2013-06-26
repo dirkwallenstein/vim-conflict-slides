@@ -43,7 +43,7 @@ fun! s:EnforceArgumentMembership(arguments, valid_arguments)
         endif
         if index(a:valid_arguments, l:arg) == -1
             echomsg "Allowed arguments: " . string(a:valid_arguments)
-            throw "Invalid argument: " . l:arg
+            throw "Invalid argument: " . string(l:arg)
         endif
     endfor
 endfun
