@@ -629,6 +629,37 @@ fun! CS_ModifyConflictContent(content_type, ...)
     endtry
 endfun
 
+fun! CS_ModifyAllConflicts(content_type, ...)
+    " Modify all conflicts in this file according to a:content_type.  Valid
+    " values are the same as for CS_ModifyConflictContent.
+    "
+    " There can be one optional argument.
+    "   'above' : only modify conflicts above the cursor position
+    "   'below' : only modify conflicts below the cursor position
+    let l:save_cursor = getpos(".")
+    let l:modification_count = 0
+    let l:lock_next_arguments = ['no-wrap']
+    exe "normal! gg"
+    if a:0
+        if a:0 > 1
+            throw "Too many arguments"
+        endif
+        call s:EnforceArgumentMembership(a:000, ['above', 'below'])
+        if a:1 == 'above'
+            call setpos('.', l:save_cursor)
+            let l:lock_next_arguments = ['no-wrap', 'backward']
+        elseif a:1 == 'below'
+            call setpos('.', l:save_cursor)
+        endif
+    endif
+    while call('CS_LockNextConflict', l:lock_next_arguments)
+        call CS_ModifyConflictContent(a:content_type)
+        let l:modification_count += 1
+    endwhile
+    call setpos('.', l:save_cursor)
+    echo "Modified " . l:modification_count . " conflicts"
+endfun
+
 fun! CS_MoveCursorToCurrentConflict()
     " Move the cursor to the default location inside the currently locked
     " conflict.  It will be either the first line of the conflict range or one
@@ -806,3 +837,13 @@ fun! CS_MoveCursorToNextConflict(...)
         return 0
     endif
 endfun
+
+" === Commands ===
+
+" Resolve all/below/above conflicts to the content-type given as argument.  See
+" CS_ModifyConflictContent for possible values.
+com! -nargs=1 CsModifyAllConflicts call CS_ModifyAllConflicts(<q-args>)
+com! -nargs=1 CsModifyAllConflictsAbove
+            \ call CS_ModifyAllConflicts(<q-args>, 'above')
+com! -nargs=1 CsModifyAllConflictsBelow
+            \ call CS_ModifyAllConflicts(<q-args>, 'below')
