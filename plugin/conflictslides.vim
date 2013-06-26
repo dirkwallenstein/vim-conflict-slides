@@ -679,24 +679,36 @@ fun! CS_LockNextConflict(...)
     " 'restore-conflict' : restore the current conflict before unlocking it
     " 'backward' : reverse the search for the next conflict.
     " 'no-wrap' : do not wrap around file boundaries.
+    " 'lock-current' : if within conflict markers and not currently locked,
+    "       lock the current conflict.
     let l:delegate_args = []
     let l:want_restore_current = 0
+    let l:want_lock_current = 0
     if a:0
         call s:EnforceArgumentMembership(a:000,
-                    \ ['restore-conflict', 'backward', 'no-wrap'])
+                    \ ['restore-conflict', 'backward',
+                            \ 'no-wrap', 'lock-current'])
         if s:IsIn('restore-conflict', a:000)
             let l:want_restore_current = 1
         endif
-        let l:delegate_args = filter(copy(a:000), 'v:val != "restore-conflict"')
+        if s:IsIn('lock-current', a:000)
+            let l:want_lock_current = 1
+        endif
+        let l:delegate_args = filter(copy(a:000),
+                    \ '!s:IsIn(v:val, ["restore-conflict", "lock-current"])')
     endif
     if s:ConflictSlides.locked
+        let l:want_lock_current = 0
         call s:ConflictSlides.positionCursorAtDefaultLocation()
         if l:want_restore_current
             call s:ConflictSlides.modifyConflictContent('forward')
         endif
         call s:ConflictSlides.releaseLock()
     endif
-    if call('CS_MoveCursorToNextConflict', l:delegate_args)
+    if l:want_lock_current && CS_IsWithinConflictMarkers()
+        call s:ConflictSlides.lockToCurrentConflict()
+        return 1
+    elseif call('CS_MoveCursorToNextConflict', l:delegate_args)
         call s:ConflictSlides.lockToCurrentConflict()
         return 1
     else
@@ -799,6 +811,12 @@ fun! CS_GetCurrentConflictInfo()
 
     call setpos('.', l:save_cursor)
     return l:conflict_info
+endfun
+
+fun! CS_IsWithinConflictMarkers()
+    " Return 1 if the cursor is within a conflict marker range, or 0
+    " otherwise.
+    return empty(s:GetCurrentConflictRange()) ? 0 : 1
 endfun
 
 fun! CS_MoveCursorToNextConflict(...)
