@@ -97,6 +97,15 @@ fun! s:IsIn(member, member_list)
     endif
 endfun
 
+fun! s:CloseTabMoveLeft()
+    " Close the current tab and focus the tab to the left
+    let l:is_last_tab = tabpagenr() == tabpagenr('$') ? 1 : 0
+    tabc
+    if !l:is_last_tab
+        exe "normal! gT"
+    endif
+endf
+
 " === Conflict Info ===
 
 fun! s:GetCurrentConflictRange()
@@ -303,6 +312,13 @@ fun! s:ConflictSlides.releaseLock() dict
         return
     endif
 
+    let l:close_this_tab = 0
+    if self.locked_buffer != bufnr('%')
+        tab sp
+        exe self.locked_buffer . "buffer"
+        let l:close_this_tab = 1
+    endif
+
     call self.resetAllVariables()
 
     if g:conflictslides_handle_locked_mappings
@@ -313,6 +329,10 @@ fun! s:ConflictSlides.releaseLock() dict
 
     if exists("*g:conflict_slides_post_unlock_callback")
         call g:conflict_slides_post_unlock_callback()
+    endif
+
+    if l:close_this_tab
+        call s:CloseTabMoveLeft()
     endif
 endfun
 
