@@ -350,10 +350,21 @@ fun! s:ConflictSlides.getCurrentLockInfo()
     endif
 endfun
 
+fun! s:ConflictSlides.getCurrentBufferMessage() dict
+    " Return a string describing the locked buffer for messages or
+    " the empty string if not locked.
+    if self.locked
+        return self.locked_buffer . " => "
+                    \ . fnamemodify(self.locked_file, ':t')
+    else
+        return ''
+    endif
+endfun
+
 fun! s:ConflictSlides.lockToCurrentConflict() dict
     " Assemble info about the conflict the cursor is currently in.
     "
-    " Make the file unmodifiable because changes could compromise what is
+    " Make the buffer unmodifiable because changes could compromise what is
     " recognized as the range of lines that belong to the conflict.
     "
     " Call the user-defined callback g:conflict_slides_post_lock_callback()
@@ -418,9 +429,9 @@ fun! s:ConflictSlides.isEmptyContentSlide() dict
     endif
 endfun
 
-fun! s:ConflictSlides.isInLockedFile() dict
-    " Return 1 if the current file is the one with a locked conflict.
-    if !self.locked || self.locked_file != resolve(expand('%:p'))
+fun! s:ConflictSlides.isInLockedBuffer() dict
+    " Return 1 if the current buffer is the one with a locked conflict.
+    if !self.locked || self.locked_buffer != bufnr('%')
         return 0
     else
         return 1
@@ -430,7 +441,7 @@ endfun
 fun! s:ConflictSlides.isWithinLockedConflict() dict
     " Return 1 if the cursor is positions inside the locked conflict
     " range.
-    if !self.isInLockedFile()
+    if !self.isInLockedBuffer()
         return 0
     endif
     if line('.') == self.getCursorDefaultLineNumber()
@@ -462,9 +473,9 @@ fun! s:ConflictSlides.positionCursorAtDefaultLocation() dict
     if !self.locked
         throw "CannotPositionCursor: not locked to any conflict"
     endif
-    if !self.isInLockedFile()
-        throw "CannotPositionCursor: Not in the right file("
-                    \ . self.locked_file . ")"
+    if !self.isInLockedBuffer()
+        throw "CannotPositionCursor: Not in the right buffer("
+                    \ . self.getCurrentBufferMessage() . ")"
     endif
     call cursor(self.getCursorDefaultLineNumber(), 0)
 endfun
@@ -473,21 +484,27 @@ fun! s:ConflictSlides.enforceConflictConditions(location_flags) dict
     " Throw an exception if the requirements specified in a:location_flags are
     " not met.  Valid flags are:
     " l - a conflict is locked
-    " f - the current file is the locked file
+    " b - the current buffer is the locked buffer
     " c - the cursor is inside the conflict range
     " E - the current conflict content is non-empty
+    " f - obsolete -- same as b
     "
     " Exceptions are raised in the order given in the above list.
     let l:flag_list = s:StringToCharList(a:location_flags)
-    call s:EnforceArgumentMembership(l:flag_list, ['l', 'f', 'c', 'E'])
+    call s:EnforceArgumentMembership(l:flag_list, ['l', 'b', 'c', 'E', 'f'])
 
     if s:IsIn('l', l:flag_list) && !self.locked
         throw "ConflictConditionsNotMet: s:ConflictSlides is not "
                     \ . "locked to a conflict."
     endif
-    if s:IsIn('f', l:flag_list) && !self.isInLockedFile()
-        throw "ConflictConditionsNotMet: Not in the right file("
-                    \ . self.locked_file . ")"
+    if s:IsIn('b', l:flag_list) && !self.isInLockedBuffer()
+        throw "ConflictConditionsNotMet: Not in the right buffer("
+                    \ . self.getCurrentBufferMessage() . ")"
+    endif
+    if s:IsIn('f', l:flag_list) && !self.isInLockedBuffer()
+        echomsg "Warning: the conflict lock query flag 'f' is obsolete.  "
+                    \ . "Use the flag 'b' in CS_QueryState()"
+        call s:ConflictSlides.enforceConflictConditions('b')
     endif
     if s:IsIn('c', l:flag_list) && !self.isWithinLockedConflict()
         throw "ConflictConditionsNotMet: Not within conflict range"
@@ -610,7 +627,7 @@ fun! s:ConflictSlides.modifyConflictContent(content_type, ...) dict
     " If the additional argument 'jumpto' is given there won't be an error if
     " the cursor is currently not within the conflict range.  Note that it is
     " very easy to jump to the conflict with CS_MoveCursorToCurrentConflict().
-    let l:location_requirement = 'lfc'
+    let l:location_requirement = 'lbc'
     let l:want_append = 0
     if a:0
         call s:EnforceArgumentMembership(a:000, ['append', 'jumpto'])
@@ -618,7 +635,7 @@ fun! s:ConflictSlides.modifyConflictContent(content_type, ...) dict
             let l:want_append = 1
         endif
         if s:IsIn('jumpto', a:000)
-            let l:location_requirement = 'lf'
+            let l:location_requirement = 'lb'
         endif
     endif
     call self.enforceConflictConditions(l:location_requirement)
@@ -714,7 +731,7 @@ fun! CS_ModifyConflictContent(content_type, ...)
 endfun
 
 fun! CS_ModifyAllConflicts(content_type, ...)
-    " Modify all conflicts in this file according to a:content_type.  Valid
+    " Modify all conflicts in this buffer according to a:content_type.  Valid
     " values are the same as for CS_ModifyConflictContent.
     "
     " There can be one optional argument.
@@ -781,12 +798,12 @@ fun! CS_LockNextConflict(...)
         let l:delegate_args = filter(copy(a:000),
                     \ '!s:IsIn(v:val, ["restore-conflict", "lock-current"])')
     endif
-    if s:ConflictSlides.locked && !s:ConflictSlides.isInLockedFile()
-        " Unlock the conflict from the previous file, but throw an error if
+    if s:ConflictSlides.locked && !s:ConflictSlides.isInLockedBuffer()
+        " Unlock the conflict from the previous buffer, but throw an error if
         " restoration is requested.  That is very likely not what is wanted,
         " but can be done by other means.
         if l:want_restore_current
-            throw "Attempt to restore conflict in another file: "
+            throw "Attempt to restore conflict in another buffer: "
                         \ . s:ConflictSlides.getCurrentLockInfo()
         endif
         call s:ConflictSlides.releaseLock()
@@ -844,9 +861,10 @@ fun! CS_QueryState(state)
     " Return 1 if all the state flags given in a:state are true.  Valid flags
     " are the following chars:
     "   l - a conflict is locked
-    "   f - the current file is the file with the locked conflict
+    "   b - the current buffer is the buffer with the locked conflict
     "   c - the cursor is inside the locked conflict range
     "   E - the current conflict content is non-empty
+    "   f - obsolete -- same as b
     try
         call s:ConflictSlides.enforceConflictConditions(a:state)
     catch /ConflictConditionsNotMet/
