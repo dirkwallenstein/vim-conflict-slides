@@ -336,7 +336,7 @@ fun! s:ConflictSlides.releaseLock() dict
     endif
 endfun
 
-fun! s:ConflictSlides.getCurrentLockInfo()
+fun! s:ConflictSlides.getCurrentLockInfo() dict
     " Return a string with infos about the currently held lock or an empty
     " string if no lock is currently held
     if self.locked
