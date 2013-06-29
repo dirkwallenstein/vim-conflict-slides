@@ -758,7 +758,16 @@ fun! CS_LockNextConflict(...)
         let l:delegate_args = filter(copy(a:000),
                     \ '!s:IsIn(v:val, ["restore-conflict", "lock-current"])')
     endif
-    if s:ConflictSlides.locked
+    if s:ConflictSlides.locked && !s:ConflictSlides.isInLockedFile()
+        " Unlock the conflict from the previous file, but throw an error if
+        " restoration is requested.  That is very likely not what is wanted,
+        " but can be done by other means.
+        if l:want_restore_current
+            throw "Attempt to restore conflict in another file: "
+                        \ . s:ConflictSlides.getCurrentLockInfo()
+        endif
+        call s:ConflictSlides.releaseLock()
+    elseif s:ConflictSlides.locked
         let l:want_lock_current = 0
         call s:ConflictSlides.positionCursorAtDefaultLocation()
         if l:want_restore_current
