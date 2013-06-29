@@ -284,6 +284,7 @@ fun! s:ConflictSlides.resetAllVariables() dict
     let self.origin_comment_sep = ''
 
     let self.locked_file = ''
+    let self.locked_buffer = 0
     let self.locked = 0
     let self.lock_time = 0
 endfun
@@ -320,6 +321,7 @@ fun! s:ConflictSlides.getCurrentLockInfo()
     " string if no lock is currently held
     if self.locked
         return "file(" . self.locked_file
+                    \ . ") buffer(" . self.locked_buffer
                     \ . ") line(" . self.start_line
                     \ . ") lock-time(" . strftime("%H:%M", self.lock_time)
                     \ . ")."
@@ -359,6 +361,7 @@ fun! s:ConflictSlides.lockToCurrentConflict() dict
     " ---
 
     let self.locked_file = resolve(expand('%:p'))
+    let self.locked_buffer = bufnr('%')
     let self.locked = 1
     let self.lock_time = localtime()
 
