@@ -967,6 +967,107 @@ fun! CS_MoveCursorToNextConflict(...)
     endif
 endfun
 
+" === Display Helpers ===
+
+fun! CS_DiffChangeFolding(state_request)
+    " Execute 'zn' or 'zN' according to the argument which can be
+    " 'on/off/toggle'.  This can be used, for example, in the post-lock
+    " callback to turn off folding, which then prevents jolting when switching
+    " diff in windows.
+    if a:state_request == 'off'
+        execute "normal! zn"
+    elseif a:state_request == 'on'
+        execute "normal! zN"
+    elseif a:state_request == 'toggle'
+        if &foldenable
+            execute "normal! zn"
+        else
+            execute "normal! zN"
+        endif
+    else
+        throw "Invalid argument: " . a:state_request
+    endif
+endfun
+
+function! s:CS_DiffSwitch_SwitchCurrent(want_on)
+    " Turn &diff of the current window on/off.  Under some conditions the
+    " buffers did not immediately line up without toggling scrollbind twice.
+    " Do that here.
+    if a:want_on
+        set diff
+    else
+        set nodiff
+    endif
+    set noscrollbind
+    set scrollbind
+endfun
+
+function! CS_DiffSwitch(operations, turn_on)
+    " Execute the operations specified in the form of a dictionary
+    " {winnr : 'operation'}.  Valid operation strings are off/on/toggle.
+    " Window numbers not present as keys in a:operations but in the list
+    " a:turn_on will join the diff.  Specified window numbers that don't exist
+    " are silently ignored.   Below are client functions for specific cases
+    " that might provide all you need with a more meaningful name.
+    let l:save_cursor = getpos('.')
+    let l:start_window = winnr()
+
+    for l:win_num in range(1, winnr('$'))
+        exe l:win_num . "wincmd w"
+
+        let l:operation = get(a:operations, l:win_num, '')
+        if !empty(l:operation)
+            if l:operation == 'toggle'
+                let l:operation = &diff ? 'off' : 'on'
+            endif
+            if l:operation == 'on'
+                call s:CS_DiffSwitch_SwitchCurrent(1)
+            elseif l:operation == 'off'
+                call s:CS_DiffSwitch_SwitchCurrent(0)
+            else
+                throw "Invalid operation value: " . l:operation
+            endif
+        else
+            if s:IsIn(l:win_num, a:turn_on)
+                call s:CS_DiffSwitch_SwitchCurrent(1)
+            endif
+        endif
+    endfor
+
+    exe l:start_window . "wincmd w"
+    call setpos('.', l:save_cursor)
+endfunction
+
+" The following functions switch the diff in windows on or off.
+" Each one turns the diff on for the first 3 or 4 windows respectively
+" (windows that don't exist are silently ignored).  The 'Off' versions turn
+" the diff off in the window specified as argument, and the 'Toggle' versions
+" toggle the diff in the specified window on/off.
+
+fun! CS_DiffSwitch3Off(window_number)
+    call CS_DiffSwitch({a:window_number : 'off'}, [1,2,3])
+endfun
+
+fun! CS_DiffSwitch3Toggle(window_number)
+    call CS_DiffSwitch({a:window_number : 'toggle'}, [1,2,3])
+endfun
+
+fun! CS_DiffSwitch3AllOn()
+    call CS_DiffSwitch({}, [1,2,3])
+endfun
+
+fun! CS_DiffSwitch4Off(window_number)
+    call CS_DiffSwitch({a:window_number : 'off'}, [1,2,3,4])
+endfun
+
+fun! CS_DiffSwitch4Toggle(window_number)
+    call CS_DiffSwitch({a:window_number : 'toggle'}, [1,2,3,4])
+endfun
+
+fun! CS_DiffSwitch4AllOn()
+    call CS_DiffSwitch({}, [1,2,3,4])
+endfun
+
 " === Commands ===
 
 " Resolve all/below/above conflicts to the content-type given as argument.  See
