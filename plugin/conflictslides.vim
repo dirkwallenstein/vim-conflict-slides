@@ -325,7 +325,7 @@ fun! s:ConflictSlides.releaseLock() dict
         call self.handleLockedMappings(1)
     endif
 
-    set modifiable
+    setlocal modifiable
 
     if exists("*g:conflict_slides_post_unlock_callback")
         call g:conflict_slides_post_unlock_callback()
@@ -396,7 +396,7 @@ fun! s:ConflictSlides.lockToCurrentConflict() dict
     let self.locked = 1
     let self.lock_time = localtime()
 
-    set nomodifiable
+    setlocal nomodifiable
 
     if g:conflictslides_handle_locked_mappings
         call self.handleLockedMappings(0)
@@ -641,7 +641,7 @@ fun! s:ConflictSlides.modifyConflictContent(content_type, ...) dict
     call self.enforceConflictConditions(l:location_requirement)
     call self.positionCursorAtDefaultLocation()
     let l:new_content = self.getNewContent(a:content_type)
-    set modifiable
+    setlocal modifiable
     if !l:want_append && !self.isEmptyContentSlide()
         execute self.start_line . "," . self.end_line . "delete"
         let self.end_line = self.start_line - 1
@@ -651,7 +651,7 @@ fun! s:ConflictSlides.modifyConflictContent(content_type, ...) dict
         let self.end_line += len(l:new_content)
     endif
     call self.positionCursorAtDefaultLocation()
-    set nomodifiable
+    setlocal nomodifiable
 endfun
 
 " -----------------------------------------------------------------------------
