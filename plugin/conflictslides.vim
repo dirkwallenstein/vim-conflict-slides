@@ -994,12 +994,12 @@ function! s:CS_DiffSwitch_SwitchCurrent(want_on)
     " buffers did not immediately line up without toggling scrollbind twice.
     " Do that here.
     if a:want_on
-        set diff
+        setlocal diff
     else
-        set nodiff
+        setlocal nodiff
     endif
-    set noscrollbind
-    set scrollbind
+    setlocal noscrollbind
+    setlocal scrollbind
 endfun
 
 function! CS_DiffSwitch(operations, turn_on)
