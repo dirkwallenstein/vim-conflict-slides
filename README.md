@@ -18,6 +18,11 @@ implement the following two functions:
     g:conflict_slides_post_lock_callback()
     g:conflict_slides_post_unlock_callback()
 
+There are display helper functions that allow you to toggle the `diff` option
+in selected windows.  How to use them and what a conflict resolution
+procedure with slides could look like is explained in
+[Conflict Resolution with Vim Conflict Slides](http://vertuxeltes.blogspot.de/2013/07/conflict-resolution-with-vim-conflict.html)
+
 Mappings
 --------
 By default, a number of *buffer-local* mappings are put in place during locked
