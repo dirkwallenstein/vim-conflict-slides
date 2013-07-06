@@ -12,6 +12,13 @@
 " along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+" File: conflictslides.vim
+" Author: Dirk Wallenstein
+" Description: Exchange and assemble conflict content
+" License: LGPLv3
+" Version: 1.0.0
+
+
 if (exists("g:loaded_conflictslides") && g:loaded_conflictslides)
     finish
 endif
