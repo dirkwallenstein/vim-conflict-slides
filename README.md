@@ -92,7 +92,7 @@ will search for the conflict start marker `<<<<<<<`.
     CS_MoveCursorToNextConflict('backward', 'no-wrap')
 
 There are a few commands to resolve conflicts in bulk.  It is possible to
-restrict the operation on conflicts above or below the current cursor position.
+restrict the operation to conflicts above or below the current cursor position.
 Example calls:
 
     :CsModifyAllConflicts base
