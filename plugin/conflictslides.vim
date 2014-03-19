@@ -960,7 +960,8 @@ fun! CS_MoveCursorToNextConflict(...)
     let l:searchflags = 's'
                 \ . (l:want_backward ? 'b' : '')
                 \ . (l:want_wrap ? 'w' : 'W')
-    let l:found_new_location = search(s:CONFLICT_MARKER_START, l:searchflags)
+    let l:pattern_start = '^' . s:CONFLICT_MARKER_START
+    let l:found_new_location = search(l:pattern_start, l:searchflags)
     if l:found_new_location
         let l:new_line = line('.')
         if (l:want_backward && l:new_line > l:starting_line)
